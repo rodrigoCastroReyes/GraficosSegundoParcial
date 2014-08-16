@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Proyecto Tres Graficos por Computadora</title>
+    <script type="text/javascript" src="lib_three/build/three.min.js"></script>
+    <script type="text/javascript" src="jquery-1.9.0.js"></script>
+    <script type="text/javascript" src="lib_three/examples/js/libs/dat.gui.min.js"></script>
+    <script type="text/javascript" src="lib_three/examples/js/libs/stats.min.js"></script>
+    <style>
+        body{
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<div id="Stats-output"></div>
+<!-- Div which will hold the Output -->
+<div id="WebGL-output"></div>
+<!-- Javascript code that runs our Three.js examples -->
+<script type="text/javascript">
+
+    // once everything is loaded, we run our Three.js stuff.
+    $(function () {
+
+        var stats = initStats();
+
+        // create a scene, that will hold all our elements such as objects, cameras and lights.
+        var scene = new THREE.Scene();
+
+        // create a camera, which defines where we're looking at.
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 10, 1000);
+
+        // create a render and set the size
+        var renderer = new THREE.WebGLRenderer();
+
+        renderer.setClearColorHex(0xEEEEEE, 1.0);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMapEnabled = true;
+
+        // create the ground plane
+
+        floorWidth=90;
+        floorHeight=80;
+        var floorGeometry = new THREE.PlaneGeometry(floorWidth,floorHeight,1,1);
+        // PlaneGeometry(width, height, widthSegments, heightSegments) widthSegments y heightSegments son parametros opcionales y son 1 por defecto
+
+        //var planeMaterial =    new THREE.MeshLambertMaterial({color: 0xffffff});
+        var floorTexture= THREE.ImageUtils.loadTexture('imagenes/mad.jpg');
+        floorTexture.wrapS=floorTexture.wrapT=THREE.RepeatWrapping;
+        var floorMaterial = new THREE.MeshPhongMaterial({map:floorTexture});
+
+
+        var floor = new THREE.Mesh(floorGeometry,floorMaterial);
+        floor.receiveShadow  = true;//indica que el plano recibira sombras
+
+        // rotate and position the plane
+        floor.rotation.x=-0.5*Math.PI;
+        floor.position.x=5;
+        floor.position.y=0
+        floor.position.z=0
+
+        // add the plane to the scene
+        scene.add(floor);
+
+        var axes=new THREE.AxisHelper(60);
+        scene.add(axes);
+
+        //pared uno
+        var wallGeometry = new THREE.CubeGeometry(90,40,5);
+        var wallTexture= THREE.ImageUtils.loadTexture('imagenes/ladrillo.jpg');
+        wallTexture.wrapS=wallTexture.wrapT=THREE.RepeatWrapping;
+        wallTexture.repeat.set(5,5);
+        var wallMaterial = new THREE.MeshPhongMaterial({map:wallTexture});
+        var wall=new THREE.Mesh(wallGeometry,wallMaterial);
+        wall.position.x=5;
+        wall.position.y=20;
+        wall.position.z=-40;
+        scene.add(wall);
+
+
+        //pared dos
+        var frontalWallGeometry=new THREE.CubeGeometry(80,40,5);
+        var frontalWallTexture= THREE.ImageUtils.loadTexture('imagenes/ladrillo.jpg');
+        frontalWallTexture.wrapS=frontalWallTexture.wrapT=THREE.RepeatWrapping;
+        frontalWallTexture.repeat.set(5,5);
+        var frontalWallMaterial = new THREE.MeshPhongMaterial({map:frontalWallTexture});
+        var frontalWall=new THREE.Mesh(frontalWallGeometry,frontalWallMaterial);
+
+        frontalWall.rotation.y=-0.5*Math.PI;
+        frontalWall.position.x=50;
+        frontalWall.position.y=20;
+        frontalWall.position.z=0;
+
+        scene.add(frontalWall);
+
+        initWindow(); //añade la ventana a la escena
+        //initPortrait();
+        initWalls();//añade las paredes a la escena
+
+        // posiciones de la camara
+        camera.position.x = -75;
+        camera.position.y = 70;
+        camera.position.z = 75;
+        camera.lookAt(scene.position);
+
+        // Luces:
+        var ambientLight =  new THREE.AmbientLight(0xffffff);
+        scene.add(ambientLight);
+
+        var spotLight = new THREE.SpotLight( 0x838d8c);
+        spotLight.position.set( 0, 80, -50 );
+        spotLight.castShadow = true;
+        scene.add( spotLight );
+
+        var light = new THREE.PointLight( 0x838d8c, 1, 100 );
+        light.position.set( 15, 30, -30 );
+        light.castShadow=true;
+        scene.add( light );
+
+
+        // add the output of the renderer to the html element
+        $("#WebGL-output").append(renderer.domElement);
+
+        render();  
+
+        function render(){
+            requestAnimationFrame(render);
+            renderer.render(scene, camera);
+        }
+
+        function createWall(){//crea un pared pequeña
+            var cubeGeometry = new THREE.CubeGeometry(24,8,2);
+            var cubeTexture=THREE.ImageUtils.loadTexture('imagenes/ladrillo.jpg');
+            cubeTexture.wrapS=cubeTexture.wrapT=THREE.RepeatWrapping;
+            cubeTexture.repeat.set(2,2);
+            var cubeMaterial = new THREE.MeshPhongMaterial({map:cubeTexture});
+            var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+            cube.castShadow=true;
+            return cube;
+        }
+
+         function initWindow(){
+            var windowGeometry=new THREE.PlaneGeometry(30,20,1,1);
+            var windowTexture= THREE.ImageUtils.loadTexture('imagenes/bosque.jpg');
+            var windowMaterial = new THREE.MeshPhongMaterial({map:windowTexture});
+            var windowMesh= new THREE.Mesh(windowGeometry,windowMaterial);
+            windowMesh.position.y=30;
+            windowMesh.position.z=-35;
+            scene.add(windowMesh);
+
+            var vidrioGeometry=new THREE.PlaneGeometry(30,20,1,1);
+            var vidrioTexture= THREE.ImageUtils.loadTexture('imagenes/vidrioVentana.jpg');
+            var vidrioMaterial = new THREE.MeshLambertMaterial({opacity:0.6,transparent:true,map:vidrioTexture});
+            var vidrioMesh= new THREE.Mesh(vidrioGeometry,vidrioMaterial);
+            vidrioMesh.position.y=30;
+            vidrioMesh.position.z=-35;
+            scene.add(vidrioMesh);
+
+            var marcoGeometry = new THREE.PlaneGeometry(30,20,1,1);
+            var marcoTexture= THREE.ImageUtils.loadTexture('imagenes/ventana.png');
+            var marcoMaterial = new THREE.MeshPhongMaterial({transparent:true,map:marcoTexture});
+            var marco=new THREE.Mesh(marcoGeometry,marcoMaterial);
+            marco.position.y=30;
+            marco.position.z=-35;
+            scene.add(marco);
+        }
+
+        function initWalls(){
+            var paredUno=createWall();
+            paredUno.position.x=10;
+            paredUno.position.y=4;
+            paredUno.position.z=-16;
+            scene.add(paredUno);
+
+            var paredDos=createWall();
+            paredDos.rotation.y=-0.5*Math.PI;
+            paredDos.position.x=23;
+            paredDos.position.y=4;
+            paredDos.position.z=-5;
+            scene.add(paredDos);
+
+            var paredTres=createWall();
+            paredTres.position.x=-14;
+            paredTres.position.y=4;
+            paredTres.position.z=26;
+            scene.add(paredTres);
+
+            var paredCuatro=createWall();
+            paredCuatro.rotation.y=-0.5*Math.PI;
+            paredCuatro.position.x=-25;
+            paredCuatro.position.y=4;
+            paredCuatro.position.z=15;
+            scene.add(paredCuatro);
+        }
+
+        function initPortrait(){
+            var portraitGeometry=new THREE.PlaneGeometry(30,20,1,1);
+            var portraitTexture= THREE.ImageUtils.loadTexture('imagenes/ballNeuman.png');
+            var portraitMaterial = new THREE.MeshPhongMaterial({map:portraitTexture});
+            var portraitMesh= new THREE.Mesh(portraitGeometry,portraitMaterial);
+
+            portraitMesh.rotation.y=-0.5*Math.PI;
+            portraitMesh.position.y=30;
+            portraitMesh.position.x=35;
+            scene.add(portraitMesh);
+        }
+
+
+
+        function initStats() {
+
+            var stats = new Stats();
+
+            stats.setMode(0); // 0: fps, 1: ms
+
+            // Align top-left
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+
+            $("#Stats-output").append( stats.domElement );
+
+            return stats;
+        }
+    });
+
+</script>
+</body>
+</html>
