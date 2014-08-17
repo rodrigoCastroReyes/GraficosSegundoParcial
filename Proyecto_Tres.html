@@ -43,8 +43,8 @@
 
         // create the ground plane
 
-        floorWidth=90;
-        floorHeight=80;
+        floorWidth=280;
+        floorHeight=230;
         var floorGeometry = new THREE.PlaneGeometry(floorWidth,floorHeight,1,1);
         // PlaneGeometry(width, height, widthSegments, heightSegments) widthSegments y heightSegments son parametros opcionales y son 1 por defecto
 
@@ -59,9 +59,10 @@
 
         // rotate and position the plane
         floor.rotation.x=-0.5*Math.PI;
+        floor.rotation.z=0.4*Math.PI;
         floor.position.x=5;
-        floor.position.y=0
-        floor.position.z=0
+        floor.position.y=0;
+        floor.position.z=-50;
 
         // add the plane to the scene
         scene.add(floor);
@@ -69,16 +70,16 @@
         var axes=new THREE.AxisHelper(60);
         scene.add(axes);
 
-        //pared uno
-        var wallGeometry = new THREE.CubeGeometry(90,40,5);
+        //pared tracera
+        var wallGeometry = new THREE.CubeGeometry(floorWidth,30,5);
         var wallTexture= THREE.ImageUtils.loadTexture('imagenes/ladrillo.jpg');
         wallTexture.wrapS=wallTexture.wrapT=THREE.RepeatWrapping;
-        wallTexture.repeat.set(5,5);
+        wallTexture.repeat.set(10,4);
         var wallMaterial = new THREE.MeshPhongMaterial({map:wallTexture});
         var wall=new THREE.Mesh(wallGeometry,wallMaterial);
         wall.position.x=5;
         wall.position.y=20;
-        wall.position.z=-40;
+        wall.position.z=-190;
         scene.add(wall);
 
 
@@ -100,11 +101,12 @@
         initWindow(); //añade la ventana a la escena
         //initPortrait();
         initWalls();//añade las paredes a la escena
+        initBalls();//añaden las pelotas
 
         // posiciones de la camara
         camera.position.x = -75;
-        camera.position.y = 70;
-        camera.position.z = 75;
+        camera.position.y = 120;
+        camera.position.z = 200;
         camera.lookAt(scene.position);
 
         // Luces:
@@ -143,7 +145,35 @@
             return cube;
         }
 
-         function initWindow(){
+        function creatBall(){//crea una pelota
+            var sphereGeometry = new THREE.SphereGeometry(5,20,20);
+            var sphereMaterial = new THREE.MeshLambertMaterial({color: 0x7777ff});
+            var sphere = new THREE.Mesh(sphereGeometry,sphereMaterial);
+            return sphere;        
+        }
+
+        function initBalls(){
+            var ball1=creatBall();
+            ball1.position.x=5;
+            ball1.position.y=5;
+            ball1.position.z=5;
+            scene.add(ball1);
+
+            var ball2=creatBall();
+            ball2.position.x=5;
+            ball2.position.y=5;
+            ball2.position.z=20;
+            scene.add(ball2);
+
+
+            var ball3=creatBall();
+            ball3.position.x=-17;
+            ball3.position.y=5;
+            ball3.position.z=5;
+            scene.add(ball3);
+        }
+
+        function initWindow(){
             var windowGeometry=new THREE.PlaneGeometry(30,20,1,1);
             var windowTexture= THREE.ImageUtils.loadTexture('imagenes/bosque.jpg');
             var windowMaterial = new THREE.MeshPhongMaterial({map:windowTexture});
@@ -168,6 +198,7 @@
             marco.position.z=-35;
             scene.add(marco);
         }
+
 
         function initWalls(){
             var paredUno=createWall();
