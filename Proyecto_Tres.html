@@ -98,7 +98,7 @@
         scene.add(frontalWall);
 
         initWindow(); //añade la ventana a la escena
-        //initPortrait();
+        initPortrait();
         initWalls();//añade las paredes a la escena
         initBalls();//añaden las pelotas
 
@@ -234,8 +234,9 @@
             var portraitMesh= new THREE.Mesh(portraitGeometry,portraitMaterial);
 
             portraitMesh.rotation.y=-0.5*Math.PI;
-            portraitMesh.position.y=30;
-            portraitMesh.position.x=35;
+            portraitMesh.position.y=20;
+            portraitMesh.position.x=floorWidth/2 -5;
+            portraitMesh.position.z=-floorHeight/2 + 30;
             scene.add(portraitMesh);
         }
 
