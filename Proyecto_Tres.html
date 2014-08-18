@@ -59,10 +59,9 @@
 
         // rotate and position the plane
         floor.rotation.x=-0.5*Math.PI;
-        floor.rotation.z=0.4*Math.PI;
-        floor.position.x=5;
+        floor.position.x=0;
         floor.position.y=0;
-        floor.position.z=-50;
+        floor.position.z=0;
 
         // add the plane to the scene
         scene.add(floor);
@@ -71,15 +70,15 @@
         scene.add(axes);
 
         //pared tracera
-        var wallGeometry = new THREE.CubeGeometry(floorWidth,30,5);
+        var wallGeometry = new THREE.CubeGeometry(floorWidth,40,5);
         var wallTexture= THREE.ImageUtils.loadTexture('imagenes/ladrillo.jpg');
         wallTexture.wrapS=wallTexture.wrapT=THREE.RepeatWrapping;
         wallTexture.repeat.set(10,4);
         var wallMaterial = new THREE.MeshPhongMaterial({map:wallTexture});
         var wall=new THREE.Mesh(wallGeometry,wallMaterial);
-        wall.position.x=5;
+        wall.position.x=0;
         wall.position.y=20;
-        wall.position.z=-190;
+        wall.position.z=-floorHeight/2;
         scene.add(wall);
 
 
@@ -92,9 +91,9 @@
         var frontalWall=new THREE.Mesh(frontalWallGeometry,frontalWallMaterial);
 
         frontalWall.rotation.y=-0.5*Math.PI;
-        frontalWall.position.x=50;
+        frontalWall.position.x= floorWidth/2 ;
         frontalWall.position.y=20;
-        frontalWall.position.z=0;
+        frontalWall.position.z=-floorHeight/2 + 40;
 
         scene.add(frontalWall);
 
@@ -104,9 +103,9 @@
         initBalls();//añaden las pelotas
 
         // posiciones de la camara
-        camera.position.x = -75;
-        camera.position.y = 120;
-        camera.position.z = 200;
+        camera.position.x = 0;
+        camera.position.y = 100;
+        camera.position.z = 250;
         camera.lookAt(scene.position);
 
         // Luces:
@@ -178,24 +177,24 @@
             var windowTexture= THREE.ImageUtils.loadTexture('imagenes/bosque.jpg');
             var windowMaterial = new THREE.MeshPhongMaterial({map:windowTexture});
             var windowMesh= new THREE.Mesh(windowGeometry,windowMaterial);
-            windowMesh.position.y=30;
-            windowMesh.position.z=-35;
+            windowMesh.position.y=20;
+            windowMesh.position.z=-floorHeight/2 + 5;
             scene.add(windowMesh);
 
             var vidrioGeometry=new THREE.PlaneGeometry(30,20,1,1);
             var vidrioTexture= THREE.ImageUtils.loadTexture('imagenes/vidrioVentana.jpg');
             var vidrioMaterial = new THREE.MeshLambertMaterial({opacity:0.6,transparent:true,map:vidrioTexture});
             var vidrioMesh= new THREE.Mesh(vidrioGeometry,vidrioMaterial);
-            vidrioMesh.position.y=30;
-            vidrioMesh.position.z=-35;
+            vidrioMesh.position.y=20;
+            vidrioMesh.position.z=-floorHeight/2 + 5;
             scene.add(vidrioMesh);
 
             var marcoGeometry = new THREE.PlaneGeometry(30,20,1,1);
             var marcoTexture= THREE.ImageUtils.loadTexture('imagenes/ventana.png');
             var marcoMaterial = new THREE.MeshPhongMaterial({transparent:true,map:marcoTexture});
             var marco=new THREE.Mesh(marcoGeometry,marcoMaterial);
-            marco.position.y=30;
-            marco.position.z=-35;
+            marco.position.y=20;
+            marco.position.z=-floorHeight/2 + 5;
             scene.add(marco);
         }
 
