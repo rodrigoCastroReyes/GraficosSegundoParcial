@@ -145,28 +145,31 @@
             return cube;
         }
 
-        function creatBall(){//crea una pelota
+        function creatBall(rutaTextura){//crea una pelota
             var sphereGeometry = new THREE.SphereGeometry(5,20,20);
-            var sphereMaterial = new THREE.MeshLambertMaterial({color: 0x7777ff});
+            var sphereTexture = THREE.ImageUtils.loadTexture(rutaTextura);
+            var sphereMaterial = new THREE.MeshPhongMaterial({map:sphereTexture});
             var sphere = new THREE.Mesh(sphereGeometry,sphereMaterial);
+
+
             return sphere;        
         }
 
         function initBalls(){
-            var ball1=creatBall();
+            var ball1=creatBall('imagenes/mad.jpg');
             ball1.position.x=5;
             ball1.position.y=5;
             ball1.position.z=5;
             scene.add(ball1);
 
-            var ball2=creatBall();
+            var ball2=creatBall('imagenes/piedra.jpg');
             ball2.position.x=5;
             ball2.position.y=5;
             ball2.position.z=20;
             scene.add(ball2);
 
 
-            var ball3=creatBall();
+            var ball3=creatBall('imagenes/marmol.jpg');
             ball3.position.x=-17;
             ball3.position.y=5;
             ball3.position.z=5;
