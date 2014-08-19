@@ -101,6 +101,7 @@
         initPortrait();
         initWalls();//añade las paredes a la escena
         initBalls();//añaden las pelotas
+        initTree();
 
         // posiciones de la camara
         camera.position.x = 0;
@@ -240,7 +241,34 @@
             scene.add(portraitMesh);
         }
 
+        function initTree(){
+            insertarTree(30, 15, 20, -100, 0, 70);
+            insertarTree(30, 15, 25, -70, 0, 70);
+        }
 
+        function insertarTree(altura, anchoHojas,alturaHojas, x, y, z){
+            var stemGeometry =new THREE.CylinderGeometry(3,3,altura,10);
+            var stemTexture = THREE.ImageUtils.loadTexture('imagenes/arbol.jpg');
+            var stemMaterial = new THREE.MeshPhongMaterial({map:stemTexture});;
+            var stemMesh = new THREE.Mesh(stemGeometry,stemMaterial);
+
+            var leafGeometry =new THREE.CylinderGeometry(anchoHojas,anchoHojas,alturaHojas,10);
+            var leafTexture = THREE.ImageUtils.loadTexture('imagenes/hojas.jpeg');
+            var leafMaterial = new THREE.MeshPhongMaterial({map:leafTexture});;
+            var leafMesh = new THREE.Mesh(leafGeometry,leafMaterial);
+
+            stemMesh.position.y=y + altura/2;
+            stemMesh.position.x=x;
+            stemMesh.position.z=z;
+
+            leafMesh.position.y= y + altura;
+            leafMesh.position.x=x;
+            leafMesh.position.z=z;
+
+            scene.add(stemMesh);
+            scene.add(leafMesh);
+
+        }
 
         function initStats() {
 
