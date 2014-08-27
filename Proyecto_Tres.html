@@ -3,10 +3,11 @@
 
 <head>
     <title>Proyecto Tres Graficos por Computadora</title>
-    <script type="text/javascript" src="lib_three/build/three.min.js"></script>
+    <script type="text/javascript" src="lib_three/build/three.js"></script>
     <script type="text/javascript" src="jquery-1.9.0.js"></script>
     <script type="text/javascript" src="lib_three/examples/js/libs/dat.gui.min.js"></script>
     <script type="text/javascript" src="lib_three/examples/js/libs/stats.min.js"></script>
+    <script type="text/javascript" src="Modelos/Bird.js"></script>
     <style>
         body{
             /* set margin to 0 and overflow to hidden, to go fullscreen */
@@ -52,6 +53,7 @@
         var floorTexture= THREE.ImageUtils.loadTexture('imagenes/mad.jpg');
         floorTexture.wrapS=floorTexture.wrapT=THREE.RepeatWrapping;
         var floorMaterial = new THREE.MeshPhongMaterial({map:floorTexture});
+        floorMaterial.bumpScale=1;
 
 
         var floor = new THREE.Mesh(floorGeometry,floorMaterial);
@@ -70,34 +72,44 @@
         scene.add(axes);
 
         //pared tracera
-        var wallGeometry = new THREE.CubeGeometry(floorWidth,40,5);
-        var wallTexture= THREE.ImageUtils.loadTexture('imagenes/ladrillo.jpg');
+        wallHeight=90;
+        var wallGeometry = new THREE.CubeGeometry(floorWidth,wallHeight,5);
+        var wallTexture= THREE.ImageUtils.loadTexture('imagenes/text_ladrillo.jpg');
         wallTexture.wrapS=wallTexture.wrapT=THREE.RepeatWrapping;
-        wallTexture.repeat.set(10,4);
+        
+        //var bump=THREE.ImageUtils.loadTexture('imagenes/bump_ladrillo.jpg');
+        //bump.wrapS=bump.wrapT=THREE.RepeatWrapping;
+        //bump.repeat.set(5,3);
+        //wallTexture.repeat.set(5,2);
+        wallGeometry.computeVertexNormals();
+        
         var wallMaterial = new THREE.MeshPhongMaterial({map:wallTexture});
+
         var wall=new THREE.Mesh(wallGeometry,wallMaterial);
         wall.position.x=0;
-        wall.position.y=20;
+        wall.position.y=45;
         wall.position.z=-floorHeight/2;
         scene.add(wall);
 
-
+        wallWeight=230
         //pared dos
-        var frontalWallGeometry=new THREE.CubeGeometry(80,40,5);
-        var frontalWallTexture= THREE.ImageUtils.loadTexture('imagenes/ladrillo.jpg');
+        var frontalWallGeometry=new THREE.CubeGeometry(wallWeight,wallHeight,5);
+        var frontalWallTexture= THREE.ImageUtils.loadTexture('imagenes/text_ladrillo.jpg');
         frontalWallTexture.wrapS=frontalWallTexture.wrapT=THREE.RepeatWrapping;
-        frontalWallTexture.repeat.set(5,5);
+        frontalWallGeometry.computeVertexNormals();  
         var frontalWallMaterial = new THREE.MeshPhongMaterial({map:frontalWallTexture});
         var frontalWall=new THREE.Mesh(frontalWallGeometry,frontalWallMaterial);
 
         frontalWall.rotation.y=-0.5*Math.PI;
         frontalWall.position.x= floorWidth/2 ;
-        frontalWall.position.y=20;
-        frontalWall.position.z=-floorHeight/2 + 40;
+        frontalWall.position.y=45;
+        frontalWall.position.z=-floorHeight/2 + 115;
 
         scene.add(frontalWall);
 
-        initWindow(); //añade la ventana a la escena
+        initWindow('imagenes/bosque.jpg',60); //añade la ventana a la escena le envia una ruta del fondo y la posicion en X en la escena
+        initWindow('imagenes/sol.jpg',180);
+
         initPortrait();
         initWalls();//añade las paredes a la escena
         initBalls();//añaden las pelotas
@@ -113,16 +125,55 @@
         var ambientLight =  new THREE.AmbientLight(0xffffff);
         scene.add(ambientLight);
 
+        //luz desde la ventana 1
         var spotLight = new THREE.SpotLight( 0x838d8c);
-        spotLight.position.set( 0, 80, -50 );
-        spotLight.castShadow = true;
+        spotLight.position.set( -45, 70, -50 );
+       // spotLight.castShadow = true;
         scene.add( spotLight );
 
-        var light = new THREE.PointLight( 0x838d8c, 1, 100 );
-        light.position.set( 15, 30, -30 );
-        light.castShadow=true;
+        //luz desde la ventana 1
+        var spotLightDos = new THREE.SpotLight( 0x838d8c);
+        spotLightDos.position.set( 65, 70, -50 );
+        spotLightDos.castShadow = true;
+        spotLightDos.intensity=3;
+        scene.add( spotLightDos );
+
+        var light = new THREE.PointLight( 0xfffbb7,0.8, 100 );
+        light.position.set( 65, 70, -50 );
         scene.add( light );
 
+         var light = new THREE.PointLight( 0xfffbb7,0.8, 100 );
+        light.position.set(-45, 70, -50 );
+        scene.add( light );
+
+
+        var material = new THREE.MeshBasicMaterial({color: 0x0000ff});
+        var radius = 5;
+        var segments = 32;
+
+
+        var spotLightTres = new THREE.SpotLight( 0xffffff);
+        spotLightTres.position.set( 0, 90, 80 );
+        spotLightTres.intensity = 0.5;
+        spotLightTres.castShadow = true;
+        //scene.add( spotLightTres );
+
+
+        var circleGeometry = new THREE.CircleGeometry( radius, segments );              
+        var circle = new THREE.Mesh( circleGeometry, material );
+        circle.position.x=spotLightDos.position.x;
+        circle.position.y=spotLightDos.position.y;
+        circle.position.z=spotLightDos.position.z;
+       // scene.add( circle )
+
+
+        bird=new THREE.Mesh( new Bird(), new THREE.MeshBasicMaterial( { color:0x000000, side: THREE.DoubleSide,transparent:true } ) );
+
+        bird.position.y=40;
+        bird.position.z=-floorHeight/2 +5;
+        //scene.add(bird);
+
+        var phase=0;
 
         // add the output of the renderer to the html element
         $("#WebGL-output").append(renderer.domElement);
@@ -130,15 +181,22 @@
         render();  
 
         function render(){
+            
+            phase=0.5+phase;
+            bird.position.x=phase;
+
+            bird.geometry.vertices[ 5 ].y = bird.geometry.vertices[ 4 ].y = Math.sin( phase ) * 5;
+            bird.geometry.verticesNeedUpdate=true;
             requestAnimationFrame(render);
             renderer.render(scene, camera);
+
         }
 
         function createWall(){//crea un pared pequeña
-            var cubeGeometry = new THREE.CubeGeometry(24,8,2);
-            var cubeTexture=THREE.ImageUtils.loadTexture('imagenes/ladrillo.jpg');
+            var cubeGeometry = new THREE.CubeGeometry(36,20,4);
+            var cubeTexture=THREE.ImageUtils.loadTexture('imagenes/paredes_pequenias.jpg');
             cubeTexture.wrapS=cubeTexture.wrapT=THREE.RepeatWrapping;
-            cubeTexture.repeat.set(2,2);
+            //cubeTexture.repeat.set(2,2);
             var cubeMaterial = new THREE.MeshPhongMaterial({map:cubeTexture});
             var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
             cube.castShadow=true;
@@ -146,102 +204,143 @@
         }
 
         function creatBall(rutaTextura){//crea una pelota
-            var sphereGeometry = new THREE.SphereGeometry(5,20,20);
+            var sphereGeometry = new THREE.SphereGeometry(10,20,20);
             var sphereTexture = THREE.ImageUtils.loadTexture(rutaTextura);
             var sphereMaterial = new THREE.MeshPhongMaterial({map:sphereTexture});
             var sphere = new THREE.Mesh(sphereGeometry,sphereMaterial);
-
-
+            sphere.castShadow=true;
             return sphere;        
         }
 
+
+        function createBaseBall(){
+            var ballGeometry = new THREE.SphereGeometry(10,20,20);
+            var ballTexture = THREE.ImageUtils.loadTexture('imagenes/marmol.jpg');
+            var bump = THREE.ImageUtils.loadTexture('imagenes/textura_golf.jpg');
+            var ballMaterial = new THREE.MeshPhongMaterial({map:ballTexture,bumpMap:bump,bumpScale:0.2});
+            var ball=new THREE.Mesh(ballGeometry,ballMaterial);
+           // ball.receiveShadow=true
+            ball.castShadow=true
+            return ball;
+        }
+
+
         function initBalls(){
-            var ball1=creatBall('imagenes/mad.jpg');
-            ball1.position.x=5;
-            ball1.position.y=5;
-            ball1.position.z=5;
+            var ball1=createBaseBall();
+            ball1.position.x=40;
+            ball1.position.y=10;
+            ball1.position.z=0;
             scene.add(ball1);
 
             var ball2=creatBall('imagenes/piedra.jpg');
-            ball2.position.x=5;
-            ball2.position.y=5;
+            ball2.position.x=-45;
+            ball2.position.y=10;
             ball2.position.z=20;
             scene.add(ball2);
 
 
-            var ball3=creatBall('imagenes/marmol.jpg');
-            ball3.position.x=-17;
-            ball3.position.y=5;
-            ball3.position.z=5;
+            var ball3=creatBall('imagenes/mad.jpg');
+            ball3.position.x=0;
+            ball3.position.y=10;
+            ball3.position.z=55;
             scene.add(ball3);
         }
 
-        function initWindow(){
-            var windowGeometry=new THREE.PlaneGeometry(30,20,1,1);
-            var windowTexture= THREE.ImageUtils.loadTexture('imagenes/bosque.jpg');
+        function initWindow(path,distance){
+
+            WindowWeight=80
+            WindowHight=60
+            positionX=-floorHeight/2 + distance;
+            positionY=50
+
+            var windowGeometry=new THREE.PlaneGeometry(WindowWeight,WindowHight,1,1);
+            var windowTexture= THREE.ImageUtils.loadTexture(path);
             var windowMaterial = new THREE.MeshPhongMaterial({map:windowTexture});
             var windowMesh= new THREE.Mesh(windowGeometry,windowMaterial);
-            windowMesh.position.y=20;
+            windowMesh.position.x=positionX;
+            windowMesh.position.y=positionY;
             windowMesh.position.z=-floorHeight/2 + 5;
             scene.add(windowMesh);
 
-            var vidrioGeometry=new THREE.PlaneGeometry(30,20,1,1);
+            var vidrioGeometry=new THREE.PlaneGeometry(WindowWeight,WindowHight,1,1);
             var vidrioTexture= THREE.ImageUtils.loadTexture('imagenes/vidrioVentana.jpg');
             var vidrioMaterial = new THREE.MeshLambertMaterial({opacity:0.6,transparent:true,map:vidrioTexture});
             var vidrioMesh= new THREE.Mesh(vidrioGeometry,vidrioMaterial);
-            vidrioMesh.position.y=20;
+            vidrioMesh.position.x=positionX;
+            vidrioMesh.position.y=positionY;
             vidrioMesh.position.z=-floorHeight/2 + 5;
             scene.add(vidrioMesh);
 
-            var marcoGeometry = new THREE.PlaneGeometry(30,20,1,1);
+            var marcoGeometry = new THREE.PlaneGeometry(WindowWeight,WindowHight,1,1);
             var marcoTexture= THREE.ImageUtils.loadTexture('imagenes/ventana.png');
             var marcoMaterial = new THREE.MeshPhongMaterial({transparent:true,map:marcoTexture});
             var marco=new THREE.Mesh(marcoGeometry,marcoMaterial);
-            marco.position.y=20;
+            marco.position.x=positionX;
+            marco.position.y=positionY;
             marco.position.z=-floorHeight/2 + 5;
             scene.add(marco);
         }
 
-
         function initWalls(){
             var paredUno=createWall();
-            paredUno.position.x=10;
-            paredUno.position.y=4;
-            paredUno.position.z=-16;
+            paredUno.position.x=-35;
+            paredUno.position.y=10;
+            paredUno.position.z=70;
             scene.add(paredUno);
 
             var paredDos=createWall();
             paredDos.rotation.y=-0.5*Math.PI;
-            paredDos.position.x=23;
-            paredDos.position.y=4;
-            paredDos.position.z=-5;
+            paredDos.position.x=-50;
+            paredDos.position.y=10;
+            paredDos.position.z=50;
             scene.add(paredDos);
 
             var paredTres=createWall();
-            paredTres.position.x=-14;
-            paredTres.position.y=4;
-            paredTres.position.z=26;
+            paredTres.position.x=45;
+            paredTres.position.y=10;
+            paredTres.position.z=-45;
             scene.add(paredTres);
 
             var paredCuatro=createWall();
             paredCuatro.rotation.y=-0.5*Math.PI;
-            paredCuatro.position.x=-25;
-            paredCuatro.position.y=4;
-            paredCuatro.position.z=15;
+            paredCuatro.position.x=60;
+            paredCuatro.position.y=10;
+            paredCuatro.position.z=-25;
             scene.add(paredCuatro);
         }
 
         function initPortrait(){
-            var portraitGeometry=new THREE.PlaneGeometry(30,20,1,1);
+
+            portraitWeight=50
+            portraitHight=40
+            marcoWeight=70
+            marcoHight=50
+
+            var portraitGeometry=new THREE.PlaneGeometry(portraitWeight,portraitHight,1,1);
             var portraitTexture= THREE.ImageUtils.loadTexture('imagenes/ballNeuman.png');
             var portraitMaterial = new THREE.MeshPhongMaterial({map:portraitTexture});
             var portraitMesh= new THREE.Mesh(portraitGeometry,portraitMaterial);
 
+            var marcoGeometry=new THREE.PlaneGeometry(marcoWeight,marcoHight,1,1);
+            var marcoTexture= THREE.ImageUtils.loadTexture('imagenes/marco.png');
+            var marcoMaterial = new THREE.MeshPhongMaterial({map:marcoTexture,transparent:true});
+            var marcoMesh= new THREE.Mesh(marcoGeometry,marcoMaterial);
+
             portraitMesh.rotation.y=-0.5*Math.PI;
-            portraitMesh.position.y=20;
+            marcoMesh.rotation.y=-0.5*Math.PI;
+
+            portraitMesh.position.y=55;
+            marcoMesh.position.y=55;
+
             portraitMesh.position.x=floorWidth/2 -5;
-            portraitMesh.position.z=-floorHeight/2 + 30;
+            marcoMesh.position.x=floorWidth/2-5;
+
+            portraitMesh.position.z=-floorHeight/2 + 120;
+            marcoMesh.position.z=-floorHeight/2 + 120;
+            
+            scene.add(marcoMesh);
             scene.add(portraitMesh);
+
         }
 
         function initTree(){
@@ -256,8 +355,10 @@
             var stemMesh = new THREE.Mesh(stemGeometry,stemMaterial);
 
             var leafGeometry =new THREE.CylinderGeometry(anchoHojas,anchoHojas,alturaHojas,10);
+
             var leafTexture = THREE.ImageUtils.loadTexture('imagenes/hojas.jpeg');
             var leafMaterial = new THREE.MeshPhongMaterial({map:leafTexture});;
+
             var leafMesh = new THREE.Mesh(leafGeometry,leafMaterial);
 
             stemMesh.position.y=y + altura/2;
