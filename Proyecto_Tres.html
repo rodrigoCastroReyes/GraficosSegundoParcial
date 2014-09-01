@@ -110,9 +110,19 @@
         initWindow('imagenes/bosque.jpg',60); //añade la ventana a la escena le envia una ruta del fondo y la posicion en X en la escena
         initWindow('imagenes/sol.jpg',180);
 
+        objects=[];
+
         initPortrait();
         initWalls();//añade las paredes a la escena
+
+        var ball1;
+        var ball2;
+        var ball3;
+
+
         initBalls();//añaden las pelotas
+        
+
         initTree();
 
         // posiciones de la camara
@@ -166,35 +176,103 @@
         circle.position.z=spotLightDos.position.z;
        // scene.add( circle )
 
+        var gui = new dat.GUI();
+        var view=this;
+        view.Marmol =true;
+        view.Madera=false;
+        view.Golf=false;
+        view.Piedra=false;
+        //manejadores/controladores de los checkbutton
+        controlTexture=gui.addFolder("Cambiar Textura Primera Pelota");
+        controlTexture.add(view,'Marmol').listen().onChange(function(value){
+            if(value){
+                console.log("Marmol");
+                ball1.material.map= THREE.ImageUtils.loadTexture("imagenes/marmol.jpg");
+                view.Madera=view.Golf=view.Piedra=false;
+            }
+        }); 
 
-        bird=new THREE.Mesh( new Bird(), new THREE.MeshBasicMaterial( { color:0x000000, side: THREE.DoubleSide,transparent:true } ) );
+        controlTexture.add(view,'Madera').listen().onChange(function(value){
+            if(value){
+                console.log("Madera");
+                view.Marmol=view.Golf=view.Piedra=false;
+                ball1.material.map= THREE.ImageUtils.loadTexture("imagenes/mad.jpg");
+                ball1.material.needsUpdate=true;   
+            }
+        }); 
 
-        bird.position.y=40;
-        bird.position.z=-floorHeight/2 +5;
+        controlTexture.add(view,'Golf').listen().onChange(function(value){
+            if(value){
+                console.log("Golf");
+                view.Marmol=view.Madera=view.Piedra=false;
+                ball1.material.map= THREE.ImageUtils.loadTexture("imagenes/golf.jpg");
+                //ball1.material.map.wrapS=ball1.material.map.wrapT=THREE.ClampToEdgeWrapping;
+                //ball1.material.map.offset.set( 15, 15 );
+                //ball1.material.map.repeat.set(125,125);
+            }
+        }); 
+
+        controlTexture.add(view,'Piedra').listen().onChange(function(value){
+            if(value){
+                console.log("Piedra");
+                view.Marmol=view.Madera=view.Golf=false;
+                ball1.material.map= THREE.ImageUtils.loadTexture("imagenes/text_stone.jpg");
+            }
+        }); 
+
+        //bird=new THREE.Mesh( new Bird(), new THREE.MeshBasicMaterial( { color:0x000000, side: THREE.DoubleSide,transparent:true } ) );
+        //bird.position.y=40;
+        //bird.position.z=-floorHeight/2 +5;
         //scene.add(bird);
-
-        var phase=0;
 
         // add the output of the renderer to the html element
         $("#WebGL-output").append(renderer.domElement);
 
-        render();  
+        render();
 
-        function render(){
+        //Picking
+        projector = new THREE.Projector();
+        var vector;
+        var ray;
+        var intersects;
+        renderer.domElement.addEventListener( 'mousedown', onMouseDown );// se maneja el evento del click
+        renderer.domElement.addEventListener( 'mousemove', onMouseMove );// se maneja el evento del click
+
+        function onMouseDown(event) {
+            event.preventDefault();
             
-            phase=0.5+phase;
-            bird.position.x=phase;
+            vector = new THREE.Vector3( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1,0.5 );
+            projector.unprojectVector( vector, camera );
+    
+            ray = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
 
-            bird.geometry.vertices[ 5 ].y = bird.geometry.vertices[ 4 ].y = Math.sin( phase ) * 5;
-            bird.geometry.verticesNeedUpdate=true;
-            requestAnimationFrame(render);
-            renderer.render(scene, camera);
+            intersects = ray.intersectObjects( objects);    
+
+            if ( intersects.length > 0) {
+                console.log("evento click");
+                intersects[0].object.callback();
+            }
+        }
+
+
+        function onMouseMove(event) {
+
+            console.log("posicion x: %d",(event.clientX/window.innerWidth)* 2 - 1);
+
 
         }
 
-        function createWall(){//crea un pared pequeña
-            var cubeGeometry = new THREE.CubeGeometry(36,20,4);
-            var cubeTexture=THREE.ImageUtils.loadTexture('imagenes/paredes_pequenias.jpg');
+        function render(){
+
+            requestAnimationFrame(render);
+            renderer.render(scene, camera);
+        }
+
+
+
+        function createWall(width,hidth,depth,path){//crea un pared pequeña
+            var cubeGeometry = new THREE.BoxGeometry(width,hidth,depth);
+            var cubeTexture=THREE.ImageUtils.loadTexture(path);
             cubeTexture.wrapS=cubeTexture.wrapT=THREE.RepeatWrapping;
             //cubeTexture.repeat.set(2,2);
             var cubeMaterial = new THREE.MeshPhongMaterial({map:cubeTexture});
@@ -216,8 +294,8 @@
         function createBaseBall(){
             var ballGeometry = new THREE.SphereGeometry(10,20,20);
             var ballTexture = THREE.ImageUtils.loadTexture('imagenes/marmol.jpg');
-            var bump = THREE.ImageUtils.loadTexture('imagenes/textura_golf.jpg');
-            var ballMaterial = new THREE.MeshPhongMaterial({map:ballTexture,bumpMap:bump,bumpScale:0.2});
+           // var bump = THREE.ImageUtils.loadTexture('imagenes/textura_golf.jpg');
+            var ballMaterial = new THREE.MeshPhongMaterial({map:ballTexture});
             var ball=new THREE.Mesh(ballGeometry,ballMaterial);
            // ball.receiveShadow=true
             ball.castShadow=true
@@ -226,24 +304,43 @@
 
 
         function initBalls(){
-            var ball1=createBaseBall();
+            ball1=createBaseBall();
             ball1.position.x=40;
             ball1.position.y=10;
             ball1.position.z=0;
-            scene.add(ball1);
 
-            var ball2=creatBall('imagenes/piedra.jpg');
+            ball1.callback=function(){
+                //ball1.position.x=positionX
+                //ball1.position.z=positionZ
+                console.log("balon uno")
+            }
+            scene.add(ball1);
+            objects.push(ball1);
+
+            ball2=creatBall('imagenes/piedra.jpg');
             ball2.position.x=-45;
             ball2.position.y=10;
             ball2.position.z=20;
+
+            ball2.callback=function(){
+                console.log("balon dos")
+            }
+
             scene.add(ball2);
+            objects.push(ball2);
 
 
-            var ball3=creatBall('imagenes/mad.jpg');
+            ball3=creatBall('imagenes/mad.jpg');
             ball3.position.x=0;
             ball3.position.y=10;
             ball3.position.z=55;
+
+            ball3.callback=function(){
+                console.log("balon tres")
+            }
+
             scene.add(ball3);
+            objects.push(ball3);
         }
 
         function initWindow(path,distance){
@@ -282,31 +379,86 @@
         }
 
         function initWalls(){
-            var paredUno=createWall();
+            var paredUno=createWall(36,20,4,'imagenes/paredes_pequenias.jpg');
             paredUno.position.x=-35;
             paredUno.position.y=10;
             paredUno.position.z=70;
             scene.add(paredUno);
 
-            var paredDos=createWall();
+            var paredDos=createWall(36,20,4,'imagenes/paredes_pequenias.jpg');
             paredDos.rotation.y=-0.5*Math.PI;
             paredDos.position.x=-50;
             paredDos.position.y=10;
             paredDos.position.z=50;
             scene.add(paredDos);
 
-            var paredTres=createWall();
+            var paredTres=createWall(36,20,4,'imagenes/paredes_pequenias.jpg');
             paredTres.position.x=45;
             paredTres.position.y=10;
             paredTres.position.z=-45;
             scene.add(paredTres);
 
-            var paredCuatro=createWall();
+            var paredCuatro=createWall(36,20,4,'imagenes/paredes_pequenias.jpg');
             paredCuatro.rotation.y=-0.5*Math.PI;
             paredCuatro.position.x=60;
             paredCuatro.position.y=10;
             paredCuatro.position.z=-25;
             scene.add(paredCuatro);
+
+
+            hidthParedFondo=15
+            var paredFondo=createWall(floorWidth-50,hidthParedFondo,10,'imagenes/wood.jpg');
+            paredFondo.rotation.y=-0.5*Math.PI;
+            paredFondo.position.x=135
+            paredFondo.position.y=6
+            //paredFondo.material.map.repeat.set(20,1)
+           // scene.add(paredFondo);
+
+            var boxMaterial=[];
+            var i;
+            for (i=0;i<7;i++){
+                var textura= THREE.ImageUtils.loadTexture('imagenes/wood.jpg');
+                textura.needsUpdate=true;
+                var material=new THREE.MeshPhongMaterial({map:textura});
+                material.overdraw=true;
+                boxMaterial.push(material);
+            }
+            var cubeGeometry = new THREE.CubeGeometry(240,10,4,boxMaterial);
+            var cube = new THREE.Mesh(cubeGeometry, new THREE.MeshPhongMaterial());
+            //cube.position.y=5;
+            ///scene.add(cube);
+
+
+            var materialArray = [];
+            var textura=THREE.ImageUtils.loadTexture( 'imagenes/pared.png' );
+            textura.wrapS = textura.wrapT = THREE.RepeatWrapping; 
+            textura.repeat.set(10,1);
+            materialArray.push(new THREE.MeshBasicMaterial( { map: textura  }));
+            materialArray.push(new THREE.MeshBasicMaterial( { map: textura  }));
+            materialArray.push(new THREE.MeshBasicMaterial( { map: textura  }));
+            materialArray.push(new THREE.MeshBasicMaterial( { map: textura  }));
+            materialArray.push(new THREE.MeshBasicMaterial( { map: textura  }));
+            materialArray.push(new THREE.MeshBasicMaterial( { map: textura  }));
+            
+            var MovingCubeMat = new THREE.MeshFaceMaterial(materialArray);
+            //var MovingCubeMat=new THREE.MeshBasicMaterial( { map: textura  });
+            var MovingCubeGeom = new THREE.CubeGeometry( 10,15, 230 );
+
+            MovingCube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat );
+            MovingCube.position.x=135;
+            MovingCube.position.y=7;
+            //MovingCube.rotation.y=Math.PI/2
+            scene.add( MovingCube );    
+
+
+            var cesped=createWall(floorWidth-50,3,10,'imagenes/cesped.jpg');
+            cesped.rotation.y=-0.5*Math.PI;
+            cesped.position.x=paredFondo.position.x
+            cesped.position.y=hidthParedFondo
+            //paredFondo.material.map.repeat.set(10,10)
+            scene.add(cesped);
+
+
         }
 
         function initPortrait(){
