@@ -182,6 +182,7 @@
         view.Madera=false;
         view.Golf=false;
         view.Piedra=false;
+        view.Porcelana = false;
         //manejadores/controladores de los checkbutton
         controlTexture=gui.addFolder("Cambiar Textura Primera Pelota");
         controlTexture.add(view,'Marmol').listen().onChange(function(value){
@@ -295,6 +296,30 @@
             }
         }); 
 
+
+        //agrego controles para el piso
+                //manejadores/controladores de los checkbutton
+        controlTexture=gui.addFolder("Cambiar Textura del Piso");
+        controlTexture.add(view,'Madera').listen().onChange(function(value){
+            if(value){
+                floor.material.map= THREE.ImageUtils.loadTexture("imagenes/mad.jpg");
+                view.Marmol=view.Porcelana = false;
+            }
+        }); 
+
+        controlTexture.add(view,'Marmol').listen().onChange(function(value){
+            if(value){
+                floor.material.map= THREE.ImageUtils.loadTexture("imagenes/marmol.jpg");
+                view.Madera=view.Porcelana = false;
+            }
+        });
+
+        controlTexture.add(view,'Porcelana').listen().onChange(function(value){
+            if(value){
+                floor.material.map= THREE.ImageUtils.loadTexture("imagenes/porcelana.jpg");
+                view.Madera=view.Marmol=false;
+            }
+        }); 
 
         //bird=new THREE.Mesh( new Bird(), new THREE.MeshBasicMaterial( { color:0x000000, side: THREE.DoubleSide,transparent:true } ) );
         //bird.position.y=40;
