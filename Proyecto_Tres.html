@@ -220,6 +220,82 @@
             }
         }); 
 
+                //manejadores/controladores de los checkbutton
+        controlTexture=gui.addFolder("Cambiar Textura Segunda Pelota");
+        controlTexture.add(view,'Marmol').listen().onChange(function(value){
+            if(value){
+                ball3.material.map= THREE.ImageUtils.loadTexture("imagenes/marmol.jpg");
+                view.Madera=view.Golf=view.Piedra=false;
+            }
+        }); 
+
+        controlTexture.add(view,'Madera').listen().onChange(function(value){
+            if(value){
+                console.log("Madera");
+                view.Marmol=view.Golf=view.Piedra=false;
+                ball3.material.map= THREE.ImageUtils.loadTexture("imagenes/mad.jpg");
+                ball3.material.needsUpdate=true;   
+            }
+        }); 
+
+        controlTexture.add(view,'Golf').listen().onChange(function(value){
+            if(value){
+                console.log("Golf");
+                view.Marmol=view.Madera=view.Piedra=false;
+                ball3.material.map= THREE.ImageUtils.loadTexture("imagenes/golf.jpg");
+                //ball1.material.map.wrapS=ball1.material.map.wrapT=THREE.ClampToEdgeWrapping;
+                //ball1.material.map.offset.set( 15, 15 );
+                //ball1.material.map.repeat.set(125,125);
+            }
+        }); 
+
+        controlTexture.add(view,'Piedra').listen().onChange(function(value){
+            if(value){
+                console.log("Piedra");
+                view.Marmol=view.Madera=view.Golf=false;
+                ball3.material.map= THREE.ImageUtils.loadTexture("imagenes/text_stone.jpg");
+            }
+        }); 
+
+
+                //manejadores/controladores de los checkbutton
+        controlTexture=gui.addFolder("Cambiar Textura Tercera Pelota");
+        controlTexture.add(view,'Marmol').listen().onChange(function(value){
+            if(value){
+                ball2.material.map= THREE.ImageUtils.loadTexture("imagenes/marmol.jpg");
+                view.Madera=view.Golf=view.Piedra=false;
+            }
+        }); 
+
+        controlTexture.add(view,'Madera').listen().onChange(function(value){
+            if(value){
+                console.log("Madera");
+                view.Marmol=view.Golf=view.Piedra=false;
+                ball2.material.map= THREE.ImageUtils.loadTexture("imagenes/mad.jpg");
+                ball2.material.needsUpdate=true;   
+            }
+        }); 
+
+        controlTexture.add(view,'Golf').listen().onChange(function(value){
+            if(value){
+                console.log("Golf");
+                view.Marmol=view.Madera=view.Piedra=false;
+                ball2.material.map= THREE.ImageUtils.loadTexture("imagenes/golf.jpg");
+                //ball1.material.map.wrapS=ball1.material.map.wrapT=THREE.ClampToEdgeWrapping;
+                //ball1.material.map.offset.set( 15, 15 );
+                //ball1.material.map.repeat.set(125,125);
+            }
+        }); 
+
+        controlTexture.add(view,'Piedra').listen().onChange(function(value){
+            if(value){
+                console.log("Piedra");
+                view.Marmol=view.Madera=view.Golf=false;
+                ball2.material.map= THREE.ImageUtils.loadTexture("imagenes/text_stone.jpg");
+            }
+        }); 
+
+
         //bird=new THREE.Mesh( new Bird(), new THREE.MeshBasicMaterial( { color:0x000000, side: THREE.DoubleSide,transparent:true } ) );
         //bird.position.y=40;
         //bird.position.z=-floorHeight/2 +5;
