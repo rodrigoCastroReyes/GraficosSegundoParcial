@@ -7,7 +7,6 @@
     <script type="text/javascript" src="jquery-1.9.0.js"></script>
     <script type="text/javascript" src="lib_three/examples/js/libs/dat.gui.min.js"></script>
     <script type="text/javascript" src="lib_three/examples/js/libs/stats.min.js"></script>
-    <script type="text/javascript" src="Modelos/Bird.js"></script>
     <style>
         body{
             /* set margin to 0 and overflow to hidden, to go fullscreen */
@@ -33,7 +32,12 @@
         var scene = new THREE.Scene();
 
         // create a camera, which defines where we're looking at.
-        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 10, 1000);
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000);
+                // posiciones de la camara
+        camera.position.x = 0;
+        camera.position.y = 100;
+        camera.position.z = 250;
+        camera.lookAt(scene.position);
 
         // create a render and set the size
         var renderer = new THREE.WebGLRenderer();
@@ -43,28 +47,19 @@
         renderer.shadowMapEnabled = true;
 
         // create the ground plane
-
         floorWidth=280;
         floorHeight=230;
         var floorGeometry = new THREE.PlaneGeometry(floorWidth,floorHeight,1,1);
-        // PlaneGeometry(width, height, widthSegments, heightSegments) widthSegments y heightSegments son parametros opcionales y son 1 por defecto
-
-        //var planeMaterial =    new THREE.MeshLambertMaterial({color: 0xffffff});
         var floorTexture= THREE.ImageUtils.loadTexture('imagenes/mad.jpg');
         floorTexture.wrapS=floorTexture.wrapT=THREE.RepeatWrapping;
         var floorMaterial = new THREE.MeshPhongMaterial({map:floorTexture});
-        floorMaterial.bumpScale=1;
-
-
         var floor = new THREE.Mesh(floorGeometry,floorMaterial);
         floor.receiveShadow  = true;//indica que el plano recibira sombras
-
         // rotate and position the plane
         floor.rotation.x=-0.5*Math.PI;
         floor.position.x=0;
         floor.position.y=0;
         floor.position.z=0;
-
         // add the plane to the scene
         scene.add(floor);
 
@@ -76,15 +71,8 @@
         var wallGeometry = new THREE.CubeGeometry(floorWidth,wallHeight,5);
         var wallTexture= THREE.ImageUtils.loadTexture('imagenes/text_ladrillo.jpg');
         wallTexture.wrapS=wallTexture.wrapT=THREE.RepeatWrapping;
-        
-        //var bump=THREE.ImageUtils.loadTexture('imagenes/bump_ladrillo.jpg');
-        //bump.wrapS=bump.wrapT=THREE.RepeatWrapping;
-        //bump.repeat.set(5,3);
-        //wallTexture.repeat.set(5,2);
         wallGeometry.computeVertexNormals();
-        
         var wallMaterial = new THREE.MeshPhongMaterial({map:wallTexture});
-
         var wall=new THREE.Mesh(wallGeometry,wallMaterial);
         wall.position.x=0;
         wall.position.y=45;
@@ -92,89 +80,49 @@
         scene.add(wall);
 
         wallWeight=230
-        //pared dos
+        //pared frontal 
         var frontalWallGeometry=new THREE.CubeGeometry(wallWeight,wallHeight,5);
         var frontalWallTexture= THREE.ImageUtils.loadTexture('imagenes/text_ladrillo.jpg');
         frontalWallTexture.wrapS=frontalWallTexture.wrapT=THREE.RepeatWrapping;
         frontalWallGeometry.computeVertexNormals();  
         var frontalWallMaterial = new THREE.MeshPhongMaterial({map:frontalWallTexture});
         var frontalWall=new THREE.Mesh(frontalWallGeometry,frontalWallMaterial);
-
         frontalWall.rotation.y=-0.5*Math.PI;
         frontalWall.position.x= floorWidth/2 ;
         frontalWall.position.y=45;
         frontalWall.position.z=-floorHeight/2 + 115;
-
         scene.add(frontalWall);
 
-        initWindow('imagenes/bosque.jpg',60); //añade la ventana a la escena le envia una ruta del fondo y la posicion en X en la escena
-        initWindow('imagenes/sol.jpg',180);
 
+
+        //declaracion de las variables usadas dentro de funciones
         objects=[];
-
-        initPortrait();
-        initWalls();//añade las paredes a la escena
-
+        var mouse = new THREE.Vector3( 0, 10000, 0.5 );
         var ball1;
         var ball2;
         var ball3;
+        //Picking
+        projector = new THREE.Projector();
+        var vector;
+        var ray;
+        var intersects;
 
+        var SELECTED;
+        var INTERSECTED
+        offset = new THREE.Vector3();
+        plane = new THREE.Mesh( new THREE.PlaneGeometry( 1000, 1000, 8, 8 ), new THREE.MeshBasicMaterial( { color: 0x000000, opacity: 0.25, transparent: true, wireframe: true } ) );
+        plane.rotation.x=-0.5*Math.PI;
+        plane.visible = false;
+        scene.add( plane );
 
+        //llamada a funciones de inicializacion de los objetos de la escena
+        initWindow('imagenes/bosque.jpg',60); //añade la ventana a la escena le envia una ruta del fondo y la posicion en X en la escena
+        initWindow('imagenes/sol.jpg',180);
+        initPortrait();
+        initWalls();//añade las paredes a la escena
         initBalls();//añaden las pelotas
-        
-
         initTree();
-
-        // posiciones de la camara
-        camera.position.x = 0;
-        camera.position.y = 100;
-        camera.position.z = 250;
-        camera.lookAt(scene.position);
-
-        // Luces:
-        var ambientLight =  new THREE.AmbientLight(0xffffff);
-        scene.add(ambientLight);
-
-        //luz desde la ventana 1
-        var spotLight = new THREE.SpotLight( 0x838d8c);
-        spotLight.position.set( -45, 70, -50 );
-       // spotLight.castShadow = true;
-        scene.add( spotLight );
-
-        //luz desde la ventana 1
-        var spotLightDos = new THREE.SpotLight( 0x838d8c);
-        spotLightDos.position.set( 65, 70, -50 );
-        spotLightDos.castShadow = true;
-        spotLightDos.intensity=3;
-        scene.add( spotLightDos );
-
-        var light = new THREE.PointLight( 0xfffbb7,0.8, 100 );
-        light.position.set( 65, 70, -50 );
-        scene.add( light );
-
-         var light = new THREE.PointLight( 0xfffbb7,0.8, 100 );
-        light.position.set(-45, 70, -50 );
-        scene.add( light );
-
-
-        var material = new THREE.MeshBasicMaterial({color: 0x0000ff});
-        var radius = 5;
-        var segments = 32;
-
-
-        var spotLightTres = new THREE.SpotLight( 0xffffff);
-        spotLightTres.position.set( 0, 90, 80 );
-        spotLightTres.intensity = 0.5;
-        spotLightTres.castShadow = true;
-        //scene.add( spotLightTres );
-
-
-        var circleGeometry = new THREE.CircleGeometry( radius, segments );              
-        var circle = new THREE.Mesh( circleGeometry, material );
-        circle.position.x=spotLightDos.position.x;
-        circle.position.y=spotLightDos.position.y;
-        circle.position.z=spotLightDos.position.z;
-       // scene.add( circle )
+        initLight();
 
         var gui = new dat.GUI();
         var view=this;
@@ -183,7 +131,9 @@
         view.Golf=false;
         view.Piedra=false;
         view.Porcelana = false;
+
         //manejadores/controladores de los checkbutton
+        
         controlTexture=gui.addFolder("Cambiar Textura Primera Pelota");
         controlTexture.add(view,'Marmol').listen().onChange(function(value){
             if(value){
@@ -244,9 +194,6 @@
                 console.log("Golf");
                 view.Marmol=view.Madera=view.Piedra=false;
                 ball3.material.map= THREE.ImageUtils.loadTexture("imagenes/golf.jpg");
-                //ball1.material.map.wrapS=ball1.material.map.wrapT=THREE.ClampToEdgeWrapping;
-                //ball1.material.map.offset.set( 15, 15 );
-                //ball1.material.map.repeat.set(125,125);
             }
         }); 
 
@@ -277,6 +224,7 @@
             }
         }); 
 
+
         controlTexture.add(view,'Golf').listen().onChange(function(value){
             if(value){
                 console.log("Golf");
@@ -295,8 +243,6 @@
                 ball2.material.map= THREE.ImageUtils.loadTexture("imagenes/text_stone.jpg");
             }
         }); 
-
-
         //agrego controles para el piso
                 //manejadores/controladores de los checkbutton
         controlTexture=gui.addFolder("Cambiar Textura del Piso");
@@ -321,27 +267,25 @@
             }
         }); 
 
-        //bird=new THREE.Mesh( new Bird(), new THREE.MeshBasicMaterial( { color:0x000000, side: THREE.DoubleSide,transparent:true } ) );
-        //bird.position.y=40;
-        //bird.position.z=-floorHeight/2 +5;
-        //scene.add(bird);
-
         // add the output of the renderer to the html element
         $("#WebGL-output").append(renderer.domElement);
 
-        render();
+        // declaracion de los manejadores de eventos
+        renderer.domElement.addEventListener( 'mousedown', onMouseDown,false);// se maneja el evento del click
+        renderer.domElement.addEventListener( 'mousemove', onMouseMove,false );// se maneja el evento del click
 
-        //Picking
-        projector = new THREE.Projector();
-        var vector;
-        var ray;
-        var intersects;
-        renderer.domElement.addEventListener( 'mousedown', onMouseDown );// se maneja el evento del click
-        renderer.domElement.addEventListener( 'mousemove', onMouseMove );// se maneja el evento del click
+        animate();
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize( window.innerWidth, window.innerHeight );
+        }
+        // manejador de eventos para el click en los objetos
 
         function onMouseDown(event) {
             event.preventDefault();
-            
+
             vector = new THREE.Vector3( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1,0.5 );
             projector.unprojectVector( vector, camera );
     
@@ -350,34 +294,90 @@
             intersects = ray.intersectObjects( objects);    
 
             if ( intersects.length > 0) {
-                console.log("evento click");
-                intersects[0].object.callback();
+                SELECTED=intersects[0].object;
+                SELECTED.callback();
             }
         }
 
-
+        //Manejador de eventos para el movimiento del mouse
         function onMouseMove(event) {
+            event.preventDefault();
+            mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+            mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+            var vector = new THREE.Vector3( mouse.x, mouse.y, 0.5 );
+            projector.unprojectVector( vector, camera );
+            var raycaster = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
+            
+            if ( SELECTED ) {
+                if(SELECTED.flag){
+                    var intersects = raycaster.intersectObject( plane );
+                    SELECTED.position.x= intersects[ 0 ].point.sub( offset ).x;
+                    SELECTED.position.z= intersects[ 0 ].point.sub( offset ).z;
+                    return;
+                }
+            }
+            var intersects = raycaster.intersectObjects( objects );
+                if ( intersects.length > 0 ) {
+                    if ( INTERSECTED != intersects[ 0 ].object ) {
+                        if ( INTERSECTED ) INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
+                        INTERSECTED = intersects[ 0 ].object;
+                        INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
+                        plane.position.copy( INTERSECTED.position );
+                        plane.rotation.x=-0.5*Math.PI;
+                    }
+                } else {
 
-            console.log("posicion x: %d",(event.clientX/window.innerWidth)* 2 - 1);
+                    if ( INTERSECTED ) INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
+                    plane.rotation.x=-0.5*Math.PI;
+                    INTERSECTED = null;
+                }
+        }
 
 
+        function animate(){
+            requestAnimationFrame(animate);
+            render();
         }
 
         function render(){
-
-            requestAnimationFrame(render);
-            renderer.render(scene, camera);
+            
+            renderer.render(scene, camera);            
         }
 
+        function initLight(){   // Luces:
+            var ambientLight =  new THREE.AmbientLight(0xffffff);
+            scene.add(ambientLight);
+            //luz desde la ventana 1
+            var spotLight = new THREE.SpotLight( 0x838d8c);
+            spotLight.position.set( -45, 70, -50 );
+            spotLight.castShadow = true;
+            spotLight.intensity.intensity=2;
+            scene.add( spotLight );
+
+            //luz desde la ventana 2
+            var spotLightDos = new THREE.SpotLight( 0x838d8c);
+            spotLightDos.position.set( 65, 70, -50 );
+            spotLightDos.castShadow = true;
+            spotLightDos.intensity=3;
+            scene.add( spotLightDos );
+
+            var light = new THREE.PointLight( 0xfffbb7,0.8, 100 );
+            light.position.set( 65, 70, -50 );
+            scene.add( light );
+
+            var light = new THREE.PointLight( 0xfffbb7,0.8, 100 );
+            light.position.set(-45, 70, -50 );
+            scene.add( light );
+        }
 
 
         function createWall(width,hidth,depth,path){//crea un pared pequeña
             var cubeGeometry = new THREE.BoxGeometry(width,hidth,depth);
             var cubeTexture=THREE.ImageUtils.loadTexture(path);
             cubeTexture.wrapS=cubeTexture.wrapT=THREE.RepeatWrapping;
-            //cubeTexture.repeat.set(2,2);
             var cubeMaterial = new THREE.MeshPhongMaterial({map:cubeTexture});
             var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+            cube.receiveShadow=true;
             cube.castShadow=true;
             return cube;
         }
@@ -405,15 +405,14 @@
 
 
         function initBalls(){
-            ball1=createBaseBall();
+            ball1=createBaseBall('imagenes/marmol.jpg')
             ball1.position.x=40;
             ball1.position.y=10;
             ball1.position.z=0;
-
+            ball1.flag=false;
             ball1.callback=function(){
-                //ball1.position.x=positionX
-                //ball1.position.z=positionZ
                 console.log("balon uno")
+                ball1.flag=!ball1.flag;
             }
             scene.add(ball1);
             objects.push(ball1);
@@ -422,22 +421,25 @@
             ball2.position.x=-45;
             ball2.position.y=10;
             ball2.position.z=20;
+            ball2.flag=false;
 
             ball2.callback=function(){
                 console.log("balon dos")
+                ball2.flag=!ball2.flag;
             }
 
             scene.add(ball2);
             objects.push(ball2);
 
-
             ball3=creatBall('imagenes/mad.jpg');
             ball3.position.x=0;
             ball3.position.y=10;
             ball3.position.z=55;
+            ball3.flag=false;
 
             ball3.callback=function(){
                 console.log("balon tres")
+                ball3.flag=!ball3.flag;
             }
 
             scene.add(ball3);
@@ -515,21 +517,6 @@
             //paredFondo.material.map.repeat.set(20,1)
            // scene.add(paredFondo);
 
-            var boxMaterial=[];
-            var i;
-            for (i=0;i<7;i++){
-                var textura= THREE.ImageUtils.loadTexture('imagenes/wood.jpg');
-                textura.needsUpdate=true;
-                var material=new THREE.MeshPhongMaterial({map:textura});
-                material.overdraw=true;
-                boxMaterial.push(material);
-            }
-            var cubeGeometry = new THREE.CubeGeometry(240,10,4,boxMaterial);
-            var cube = new THREE.Mesh(cubeGeometry, new THREE.MeshPhongMaterial());
-            //cube.position.y=5;
-            ///scene.add(cube);
-
-
             var materialArray = [];
             var textura=THREE.ImageUtils.loadTexture( 'imagenes/pared.png' );
             textura.wrapS = textura.wrapT = THREE.RepeatWrapping; 
@@ -540,22 +527,24 @@
             materialArray.push(new THREE.MeshBasicMaterial( { map: textura  }));
             materialArray.push(new THREE.MeshBasicMaterial( { map: textura  }));
             materialArray.push(new THREE.MeshBasicMaterial( { map: textura  }));
-            
             var MovingCubeMat = new THREE.MeshFaceMaterial(materialArray);
-            //var MovingCubeMat=new THREE.MeshBasicMaterial( { map: textura  });
             var MovingCubeGeom = new THREE.CubeGeometry( 10,15, 230 );
-
             MovingCube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat );
             MovingCube.position.x=135;
             MovingCube.position.y=7;
-            //MovingCube.rotation.y=Math.PI/2
-            scene.add( MovingCube );    
+            scene.add( MovingCube );  
 
-
-            var cesped=createWall(floorWidth-50,3,10,'imagenes/cesped.jpg');
+            var array = [];
+            var texturaCesped=THREE.ImageUtils.loadTexture('imagenes/cesped_text.jpg');
+            //texturaCesped.wrapS = texturaCesped.wrapT = THREE.RepeatWrapping;
+            var cespedMaterial = new THREE.MeshPhongMaterial({map:texturaCesped});
+            var cespedGeo = new THREE.CubeGeometry(floorWidth-50,5,7);
+           // var cesped=createWall(floorWidth-50,3,10,'imagenes/cesped.jpg');
+            var cesped= new THREE.Mesh(cespedGeo,cespedMaterial)
             cesped.rotation.y=-0.5*Math.PI;
             cesped.position.x=paredFondo.position.x
             cesped.position.y=hidthParedFondo
+
             //paredFondo.material.map.repeat.set(10,10)
             scene.add(cesped);
 
@@ -597,8 +586,8 @@
         }
 
         function initTree(){
-            insertarTree(30, 15, 20, -100, 0, 70);
-            insertarTree(30, 15, 25, -70, 0, 70);
+            insertarTree(30, 15, 20, -115, 0, -82);
+            insertarTree(30, 15, 25, -80, 0, -78);
         }
 
         function insertarTree(altura, anchoHojas,alturaHojas, x, y, z){
@@ -606,24 +595,57 @@
             var stemTexture = THREE.ImageUtils.loadTexture('imagenes/arbol.jpg');
             var stemMaterial = new THREE.MeshPhongMaterial({map:stemTexture});;
             var stemMesh = new THREE.Mesh(stemGeometry,stemMaterial);
+            stemMesh.castShadow=true;
 
             var leafGeometry =new THREE.CylinderGeometry(anchoHojas,anchoHojas,alturaHojas,10);
+            var leafTexture = THREE.ImageUtils.loadTexture('imagenes/cesped.jpg');
+            var leafMaterial = new THREE.MeshPhongMaterial({map:leafTexture});
+            leafMaterial.castShadow=true;
+            leafMaterial.bumpMap    = THREE.ImageUtils.loadTexture('imagenes/bumpHojas.jpg')
+            leafMaterial.bumpScale = 0.05;
 
-            var leafTexture = THREE.ImageUtils.loadTexture('imagenes/hojas.jpeg');
-            var leafMaterial = new THREE.MeshPhongMaterial({map:leafTexture});;
+            var light = new THREE.PointLight( 0xfffbb7,0.5, 100 );
+            light.position.set(x,30,-50);
+
+            var material = new THREE.MeshBasicMaterial({color: 0x0000ff});
+            var radius = 5;
+            var segments = 32;
+
+            var circleGeometry = new THREE.CircleGeometry( radius, segments );              
+            var circle = new THREE.Mesh( circleGeometry, material );
+            circle.position.x=light.position.x;
+            circle.position.y=light.position.y;
+            circle.position.z=light.position.z;
+            //scene.add( circle )
+
+            scene.add( light );
 
             var leafMesh = new THREE.Mesh(leafGeometry,leafMaterial);
+            leafMesh.receiveShadow=true;
+
+
+            var masetaGeometry =new THREE.CylinderGeometry(10,10,5,20);
+            var masetaTexture=THREE.ImageUtils.loadTexture('imagenes/piso.jpg');
+
+            var masetaMaterial = new THREE.MeshPhongMaterial({map:masetaTexture});
+            var maseta= new THREE.Mesh(masetaGeometry,masetaMaterial);
 
             stemMesh.position.y=y + altura/2;
             stemMesh.position.x=x;
             stemMesh.position.z=z;
 
+            maseta.position.y=3;
+            maseta.position.x=x;
+            maseta.position.z=z;
+
             leafMesh.position.y= y + altura;
             leafMesh.position.x=x;
             leafMesh.position.z=z;
 
+
             scene.add(stemMesh);
             scene.add(leafMesh);
+            scene.add(maseta);
 
         }
 
