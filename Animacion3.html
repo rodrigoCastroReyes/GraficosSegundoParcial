@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Proyecto Tres Graficos por Computadora</title>
+    <script type="text/javascript" src="lib_three/build/three.js"></script>
+    <script type="text/javascript" src="jquery-1.9.0.js"></script>
+    <script type="text/javascript" src="lib_three/examples/js/libs/dat.gui.min.js"></script>
+    <script type="text/javascript" src="lib_three/examples/js/libs/stats.min.js"></script>
+    <script type="text/javascript" src="Detector.js"></script>
+    <style>
+        body{
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<div id="Stats-output"></div>
+<!-- Div which will hold the Output -->
+<div id="WebGL-output"></div>
+<!-- Javascript code that runs our Three.js examples -->
+<script type="text/javascript">
+
+    // once everything is loaded, we run our Three.js stuff.
+    $(function () {
+
+        var stats = initStats();
+        var flaq = false;
+        var xp, yp;
+        // create a scene, that will hold all our elements such as objects, cameras and lights.
+        var scene = new THREE.Scene();
+
+        // create a camera, which defines where we're looking at.
+        var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 10, 1000);
+
+        // create a render and set the size
+        var renderer = new THREE.WebGLRenderer();
+
+        renderer.setClearColorHex(0xEEEEEE, 1.0);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMapEnabled = true;
+
+        // create the ground plane
+
+        floorWidth=280;
+        floorHeight=230;
+        var floorGeometry = new THREE.PlaneGeometry(floorWidth,floorHeight,1,1);
+        // PlaneGeometry(width, height, widthSegments, heightSegments) widthSegments y heightSegments son parametros opcionales y son 1 por defecto
+
+        //var planeMaterial =    new THREE.MeshLambertMaterial({color: 0xffffff});
+        var floorTexture= THREE.ImageUtils.loadTexture('imagenes/mad.jpg');
+        floorTexture.wrapS=floorTexture.wrapT=THREE.RepeatWrapping;
+        var floorMaterial = new THREE.MeshPhongMaterial({map:floorTexture});
+        floorMaterial.bumpScale=1;
+
+
+        var floor = new THREE.Mesh(floorGeometry,floorMaterial);
+        floor.receiveShadow  = true;//indica que el plano recibira sombras
+
+        // rotate and position the plane
+        floor.rotation.x=-0.5*Math.PI;
+        floor.position.x=0;
+        floor.position.y=0;
+        floor.position.z=0;
+
+        // add the plane to the scene
+        scene.add(floor);
+
+        var axes=new THREE.AxisHelper(60);
+        scene.add(axes);
+
+        //pared tracera
+        wallHeight=90;
+        var wallGeometry = new THREE.CubeGeometry(floorWidth,wallHeight,5);
+        var wallTexture= THREE.ImageUtils.loadTexture('imagenes/text_ladrillo.jpg');
+        wallTexture.wrapS=wallTexture.wrapT=THREE.RepeatWrapping;
+        
+        //var bump=THREE.ImageUtils.loadTexture('imagenes/bump_ladrillo.jpg');
+        //bump.wrapS=bump.wrapT=THREE.RepeatWrapping;
+        //bump.repeat.set(5,3);
+        //wallTexture.repeat.set(5,2);
+        wallGeometry.computeVertexNormals();
+        
+        var wallMaterial = new THREE.MeshPhongMaterial({map:wallTexture});
+
+        var wall=new THREE.Mesh(wallGeometry,wallMaterial);
+        wall.position.x=0;
+        wall.position.y=45;
+        wall.position.z=-floorHeight/2;
+        scene.add(wall);
+
+        wallWeight=230
+        //pared dos
+        var frontalWallGeometry=new THREE.CubeGeometry(wallWeight,wallHeight,5);
+        var frontalWallTexture= THREE.ImageUtils.loadTexture('imagenes/text_ladrillo.jpg');
+        frontalWallTexture.wrapS=frontalWallTexture.wrapT=THREE.RepeatWrapping;
+        frontalWallGeometry.computeVertexNormals();  
+        var frontalWallMaterial = new THREE.MeshPhongMaterial({map:frontalWallTexture});
+        var frontalWall=new THREE.Mesh(frontalWallGeometry,frontalWallMaterial);
+
+        frontalWall.rotation.y=-0.5*Math.PI;
+        frontalWall.position.x= floorWidth/2 ;
+        frontalWall.position.y=45;
+        frontalWall.position.z=-floorHeight/2 + 115;
+
+        scene.add(frontalWall);
+
+        initWindow('imagenes/bosque.jpg',60); //añade la ventana a la escena le envia una ruta del fondo y la posicion en X en la escena
+        initWindow('imagenes/sol.jpg',180);
+
+        objects=[];
+
+        initPortrait();
+        initWalls();//añade las paredes a la escena
+
+        var ball1;
+        var ball2;
+        var ball3;
+        var paredUno;
+        var paredDos;
+        var paredTres;
+        var paredCuatro;
+
+
+        initBalls();//añaden las pelotas
+        ballActual = ball1;
+
+        initTree();
+
+        // posiciones de la camara
+        camera.position.x = 0;
+        camera.position.y = 200;
+        camera.position.z = 350;
+        camera.lookAt(scene.position);
+
+        // Luces:
+        var ambientLight =  new THREE.AmbientLight(0xffffff);
+        scene.add(ambientLight);
+
+        //luz desde la ventana 1
+        var spotLight = new THREE.SpotLight( 0x838d8c);
+        spotLight.position.set( -45, 70, -50 );
+       // spotLight.castShadow = true;
+        scene.add( spotLight );
+
+        //luz desde la ventana 1
+        var spotLightDos = new THREE.SpotLight( 0x838d8c);
+        spotLightDos.position.set( 65, 70, -50 );
+        spotLightDos.castShadow = true;
+        spotLightDos.intensity=3;
+        scene.add( spotLightDos );
+
+        var light = new THREE.PointLight( 0xfffbb7,0.8, 100 );
+        light.position.set( 65, 70, -50 );
+        scene.add( light );
+
+         var light = new THREE.PointLight( 0xfffbb7,0.8, 100 );
+        light.position.set(-45, 70, -50 );
+        scene.add( light );
+
+
+        var material = new THREE.MeshBasicMaterial({color: 0x0000ff});
+        var radius = 5;
+        var segments = 32;
+
+
+        var spotLightTres = new THREE.SpotLight( 0xffffff);
+        spotLightTres.position.set( 0, 90, 80 );
+        spotLightTres.intensity = 0.5;
+        spotLightTres.castShadow = true;
+        //scene.add( spotLightTres );
+
+
+        var circleGeometry = new THREE.CircleGeometry( radius, segments );              
+        var circle = new THREE.Mesh( circleGeometry, material );
+        circle.position.x=spotLightDos.position.x;
+        circle.position.y=spotLightDos.position.y;
+        circle.position.z=spotLightDos.position.z;
+       // scene.add( circle )
+
+        var gui = new dat.GUI();
+        var view=this;
+        view.Marmol =true;
+        view.Madera=false;
+        view.Golf=false;
+        view.Piedra=false;
+        view.Porcelana = false;
+
+        //manejadores/controladores de los checkbutton
+        controlTexture=gui.addFolder("Cambiar Textura Primera Pelota");
+        controlTexture.add(view,'Marmol').listen().onChange(function(value){
+            if(value){
+                console.log("Marmol");
+                ball1.material.map= THREE.ImageUtils.loadTexture("imagenes/marmol.jpg");
+                view.Madera=view.Golf=view.Piedra=false;
+            }
+        }); 
+
+        controlTexture.add(view,'Madera').listen().onChange(function(value){
+            if(value){
+                console.log("Madera");
+                view.Marmol=view.Golf=view.Piedra=false;
+                ball1.material.map= THREE.ImageUtils.loadTexture("imagenes/mad.jpg");
+                ball1.material.needsUpdate=true;   
+            }
+        }); 
+
+        controlTexture.add(view,'Golf').listen().onChange(function(value){
+            if(value){
+                console.log("Golf");
+                view.Marmol=view.Madera=view.Piedra=false;
+                ball1.material.map= THREE.ImageUtils.loadTexture("imagenes/golf.jpg");
+                //ball1.material.map.wrapS=ball1.material.map.wrapT=THREE.ClampToEdgeWrapping;
+                //ball1.material.map.offset.set( 15, 15 );
+                //ball1.material.map.repeat.set(125,125);
+            }
+        }); 
+
+        controlTexture.add(view,'Piedra').listen().onChange(function(value){
+            if(value){
+                console.log("Piedra");
+                view.Marmol=view.Madera=view.Golf=false;
+                ball1.material.map= THREE.ImageUtils.loadTexture("imagenes/text_stone.jpg");
+            }
+        }); 
+
+                //manejadores/controladores de los checkbutton
+        controlTexture=gui.addFolder("Cambiar Textura Segunda Pelota");
+        controlTexture.add(view,'Marmol').listen().onChange(function(value){
+            if(value){
+                ball3.material.map= THREE.ImageUtils.loadTexture("imagenes/marmol.jpg");
+                view.Madera=view.Golf=view.Piedra=false;
+            }
+        }); 
+
+        controlTexture.add(view,'Madera').listen().onChange(function(value){
+            if(value){
+                console.log("Madera");
+                view.Marmol=view.Golf=view.Piedra=false;
+                ball3.material.map= THREE.ImageUtils.loadTexture("imagenes/mad.jpg");
+                ball3.material.needsUpdate=true;   
+            }
+        }); 
+
+        controlTexture.add(view,'Golf').listen().onChange(function(value){
+            if(value){
+                console.log("Golf");
+                view.Marmol=view.Madera=view.Piedra=false;
+                ball3.material.map= THREE.ImageUtils.loadTexture("imagenes/golf.jpg");
+                //ball1.material.map.wrapS=ball1.material.map.wrapT=THREE.ClampToEdgeWrapping;
+                //ball1.material.map.offset.set( 15, 15 );
+                //ball1.material.map.repeat.set(125,125);
+            }
+        }); 
+
+        controlTexture.add(view,'Piedra').listen().onChange(function(value){
+            if(value){
+                console.log("Piedra");
+                view.Marmol=view.Madera=view.Golf=false;
+                ball3.material.map= THREE.ImageUtils.loadTexture("imagenes/text_stone.jpg");
+            }
+        }); 
+
+
+                //manejadores/controladores de los checkbutton
+        controlTexture=gui.addFolder("Cambiar Textura Tercera Pelota");
+        controlTexture.add(view,'Marmol').listen().onChange(function(value){
+            if(value){
+                ball2.material.map= THREE.ImageUtils.loadTexture("imagenes/marmol.jpg");
+                view.Madera=view.Golf=view.Piedra=false;
+            }
+        }); 
+
+        controlTexture.add(view,'Madera').listen().onChange(function(value){
+            if(value){
+                console.log("Madera");
+                view.Marmol=view.Golf=view.Piedra=false;
+                ball2.material.map= THREE.ImageUtils.loadTexture("imagenes/mad.jpg");
+                ball2.material.needsUpdate=true;   
+            }
+        }); 
+
+        controlTexture.add(view,'Golf').listen().onChange(function(value){
+            if(value){
+                console.log("Golf");
+                view.Marmol=view.Madera=view.Piedra=false;
+                ball2.material.map= THREE.ImageUtils.loadTexture("imagenes/golf.jpg");
+                //ball1.material.map.wrapS=ball1.material.map.wrapT=THREE.ClampToEdgeWrapping;
+                //ball1.material.map.offset.set( 15, 15 );
+                //ball1.material.map.repeat.set(125,125);
+            }
+        }); 
+
+        controlTexture.add(view,'Piedra').listen().onChange(function(value){
+            if(value){
+                console.log("Piedra");
+                view.Marmol=view.Madera=view.Golf=false;
+                ball2.material.map= THREE.ImageUtils.loadTexture("imagenes/text_stone.jpg");
+            }
+        }); 
+
+
+        //agrego controles para el piso
+                //manejadores/controladores de los checkbutton
+        controlTexture=gui.addFolder("Cambiar Textura del Piso");
+        controlTexture.add(view,'Madera').listen().onChange(function(value){
+            if(value){
+                floor.material.map= THREE.ImageUtils.loadTexture("imagenes/mad.jpg");
+                view.Marmol=view.Porcelana = false;
+            }
+        }); 
+
+        controlTexture.add(view,'Marmol').listen().onChange(function(value){
+            if(value){
+                floor.material.map= THREE.ImageUtils.loadTexture("imagenes/marmol.jpg");
+                view.Madera=view.Porcelana = false;
+            }
+        });
+
+        controlTexture.add(view,'Porcelana').listen().onChange(function(value){
+            if(value){
+                floor.material.map= THREE.ImageUtils.loadTexture("imagenes/porcelana.jpg");
+                view.Madera=view.Marmol=false;
+            }
+        }); 
+
+
+
+        // add the output of the renderer to the html element
+        $("#WebGL-output").append(renderer.domElement);
+
+        render();
+
+        //Picking
+        projector = new THREE.Projector();
+        var vector;
+        var ray;
+        var intersects;
+        renderer.domElement.addEventListener( 'mousedown', onMouseDown );// se maneja el evento del click
+        renderer.domElement.addEventListener( 'mousemove', onMouseMove );// se maneja el evento del click
+
+        function onMouseDown(event) {
+            event.preventDefault();
+            
+            vector = new THREE.Vector3( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1,1 );
+            projector.unprojectVector( vector, camera );
+    
+            ray = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
+
+            intersects = ray.intersectObjects(scene.children, true);    
+
+            if ( intersects.length) {
+                console.log("evento click");
+                //intersects[0].object.callback();
+                xp = intersects[0].point.x;
+                yp = intersects[0].point.z;
+                console.log("x: " + xp + ", z: " + yp);
+                flaq = true;
+            }
+
+        }
+
+
+        function onMouseMove(event) {
+
+            //console.log("posicion x: %d",(event.clientX/window.innerWidth)* 2 - 1);
+
+
+        }
+
+        function render(){
+
+            
+            requestAnimationFrame(render);
+            renderer.render(scene, camera);
+            var bandDer = false;
+            var bandAdelante = false;
+
+            var bandDer2 = false;
+            var bandAdelante2 = false;
+
+            var bandDer3 = false;
+            var bandAdelante3 = false;
+
+            if (flaq){
+                if (ball1.position.x<= xp){
+                    ball1.rotation.z+=0.1;
+                    ball1.position.x += 1;
+                    bandDer = true;
+                }
+                if(ball1.position.x> xp){
+                    ball1.rotation.z-=0.1;
+                    ball1.position.x -=1;
+                    bandDer = false;
+                }
+                if(ball1.position.z <= yp){
+                    ball1.rotation.x+=0.1;
+                    ball1.position.z +=  1;
+                    bandAdelante = true;
+                }
+                if(ball1.position.z>yp){
+                    ball1.rotation.x-=0.1;
+                    ball1.position.z-=1;
+                    bandAdelante = false;
+                }
+                if(detectColition(ball1)){
+                    console.log("choque");
+                    if (bandDer){
+                        ball1.position.z+=7; 
+                    }
+                    else{
+                     ball1.position.x-=5; 
+                    }
+                    if(bandAdelante){
+                        ball1.position.x-=5;
+                    }
+                    else{
+                        ball1.position.z+=7;
+                    }
+                    
+                }
+            }
+
+            if (ball2.position.x<= xp + 17){
+                    ball2.rotation.z+=0.1;
+                    ball2.position.x += 1;
+                    bandDer2 = true;
+                }
+                if(ball2.position.x> xp + 17){
+                    ball2.rotation.z-=0.1;
+                    ball2.position.x -=1;
+                    bandDer2 = false;
+                }
+                if(ball2.position.z <= yp + 20){
+                    ball2.rotation.x+=0.1;
+                    ball2.position.z +=  1;
+                    bandAdelante2 = true;
+                }
+                if(ball2.position.z>yp + 20){
+                    ball2.rotation.x-=0.1;
+                    ball2.position.z-=1;
+                    bandAdelante2 = false;
+                }
+                if(detectColition(ball2)){
+                    console.log("choque");
+                    if (bandDer2){
+                        ball2.position.z+=7; 
+                    }
+                    else{
+                     ball2.position.x-=5; 
+                    }
+                    if(bandAdelante2){
+                        ball2.position.x-=5;
+                    }
+                    else{
+                        ball2.position.z+=7;
+                    }
+                    
+                }
+
+                if (ball3.position.x<= xp - 20){
+                    ball3.rotation.z+=0.1;
+                    ball3.position.x += 1;
+                    bandDer3 = true;
+                }
+                if(ball3.position.x> xp -20){
+                    ball3.rotation.z-=0.1;
+                    ball3.position.x -=1;
+                    bandDer3 = false;
+                }
+                if(ball3.position.z <= yp + 30){
+                    ball3.rotation.x+=0.1;
+                    ball3.position.z +=  1;
+                    bandAdelante3 = true;
+                }
+                if(ball3.position.z>yp + 30){
+                    ball3.rotation.x-=0.1;
+                    ball3.position.z-=1;
+                    bandAdelante3 = false;
+                }
+                if(detectColition(ball3)){
+                    console.log("choque");
+                    if (bandDer3){
+                        ball3.position.z+=7; 
+                    }
+                    else{
+                     ball3.position.x-=5; 
+                    }
+                    if(bandAdelante3){
+                        ball3.position.x-=5;
+                    }
+                    else{
+                        ball3.position.z+=7;
+                    }
+                    
+                }
+            
+
+
+        }
+
+
+
+        function createWall(width,hidth,depth,path){//crea un pared pequeña
+            var cubeGeometry = new THREE.BoxGeometry(width,hidth,depth);
+            var cubeTexture=THREE.ImageUtils.loadTexture(path);
+            cubeTexture.wrapS=cubeTexture.wrapT=THREE.RepeatWrapping;
+            //cubeTexture.repeat.set(2,2);
+            var cubeMaterial = new THREE.MeshPhongMaterial({map:cubeTexture});
+            var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+            cube.castShadow=true;
+            return cube;
+        }
+
+        function creatBall(rutaTextura){//crea una pelota
+            var sphereGeometry = new THREE.SphereGeometry(10,20,20);
+            var sphereTexture = THREE.ImageUtils.loadTexture(rutaTextura);
+            var sphereMaterial = new THREE.MeshPhongMaterial({map:sphereTexture});
+            var sphere = new THREE.Mesh(sphereGeometry,sphereMaterial);
+            sphere.castShadow=true;
+            return sphere;        
+        }
+
+
+        function createBaseBall(){
+            var ballGeometry = new THREE.SphereGeometry(10,20,20);
+            var ballTexture = THREE.ImageUtils.loadTexture('imagenes/marmol.jpg');
+           // var bump = THREE.ImageUtils.loadTexture('imagenes/textura_golf.jpg');
+            var ballMaterial = new THREE.MeshPhongMaterial({map:ballTexture});
+            var ball=new THREE.Mesh(ballGeometry,ballMaterial);
+           // ball.receiveShadow=true
+            ball.castShadow=true
+            return ball;
+        }
+
+
+        function initBalls(){
+            ball1=createBaseBall();
+            ball1.position.x=40;
+            ball1.position.y=10;
+            ball1.position.z=0;
+            var ball1_mover = false;
+
+            ball1.callback=function(){
+                //ball1.position.x=positionX
+                //ball1.position.z=positionZ
+                ball1_mover = true
+                console.log(ball1_mover);
+                console.log("balon uno")
+            }
+            scene.add(ball1);
+            objects.push(ball1);
+
+            ball2=creatBall('imagenes/piedra.jpg');
+            ball2.position.x=-45;
+            ball2.position.y=10;
+            ball2.position.z=20;
+
+            ball2.callback=function(){
+                console.log("balon dos")
+            }
+
+            scene.add(ball2);
+            objects.push(ball2);
+
+
+            ball3=creatBall('imagenes/mad.jpg');
+            ball3.position.x=0;
+            ball3.position.y=10;
+            ball3.position.z=55;
+
+            ball3.callback=function(){
+                console.log("balon tres")
+            }
+
+            scene.add(ball3);
+            objects.push(ball3);
+        }
+
+        function initWindow(path,distance){
+
+            WindowWeight=80
+            WindowHight=60
+            positionX=-floorHeight/2 + distance;
+            positionY=50
+
+            var windowGeometry=new THREE.PlaneGeometry(WindowWeight,WindowHight,1,1);
+            var windowTexture= THREE.ImageUtils.loadTexture(path);
+            var windowMaterial = new THREE.MeshPhongMaterial({map:windowTexture});
+            var windowMesh= new THREE.Mesh(windowGeometry,windowMaterial);
+            windowMesh.position.x=positionX;
+            windowMesh.position.y=positionY;
+            windowMesh.position.z=-floorHeight/2 + 5;
+            scene.add(windowMesh);
+
+            var vidrioGeometry=new THREE.PlaneGeometry(WindowWeight,WindowHight,1,1);
+            var vidrioTexture= THREE.ImageUtils.loadTexture('imagenes/vidrioVentana.jpg');
+            var vidrioMaterial = new THREE.MeshLambertMaterial({opacity:0.6,transparent:true,map:vidrioTexture});
+            var vidrioMesh= new THREE.Mesh(vidrioGeometry,vidrioMaterial);
+            vidrioMesh.position.x=positionX;
+            vidrioMesh.position.y=positionY;
+            vidrioMesh.position.z=-floorHeight/2 + 5;
+            scene.add(vidrioMesh);
+
+            var marcoGeometry = new THREE.PlaneGeometry(WindowWeight,WindowHight,1,1);
+            var marcoTexture= THREE.ImageUtils.loadTexture('imagenes/ventana.png');
+            var marcoMaterial = new THREE.MeshPhongMaterial({transparent:true,map:marcoTexture});
+            var marco=new THREE.Mesh(marcoGeometry,marcoMaterial);
+            marco.position.x=positionX;
+            marco.position.y=positionY;
+            marco.position.z=-floorHeight/2 + 5;
+            scene.add(marco);
+        }
+
+        function initWalls(){
+            paredUno=createWall(36,20,4,'imagenes/paredes_pequenias.jpg');
+            paredUno.position.x=-35;
+            paredUno.position.y=10;
+            paredUno.position.z=70;
+            scene.add(paredUno);
+
+            paredDos=createWall(36,20,4,'imagenes/paredes_pequenias.jpg');
+            paredDos.rotation.y=-0.5*Math.PI;
+            paredDos.position.x=-50;
+            paredDos.position.y=10;
+            paredDos.position.z=50;
+            scene.add(paredDos);
+
+            paredTres=createWall(36,20,4,'imagenes/paredes_pequenias.jpg');
+            paredTres.position.x=45;
+            paredTres.position.y=10;
+            paredTres.position.z=-45;
+            scene.add(paredTres);
+
+            paredCuatro=createWall(36,20,4,'imagenes/paredes_pequenias.jpg');
+            paredCuatro.rotation.y=-0.5*Math.PI;
+            paredCuatro.position.x=60;
+            paredCuatro.position.y=10;
+            paredCuatro.position.z=-25;
+            scene.add(paredCuatro);
+
+
+            hidthParedFondo=15
+            var paredFondo=createWall(floorWidth-50,hidthParedFondo,10,'imagenes/wood.jpg');
+            paredFondo.rotation.y=-0.5*Math.PI;
+            paredFondo.position.x=135
+            paredFondo.position.y=6
+            //paredFondo.material.map.repeat.set(20,1)
+           // scene.add(paredFondo);
+
+            var boxMaterial=[];
+            var i;
+            for (i=0;i<7;i++){
+                var textura= THREE.ImageUtils.loadTexture('imagenes/wood.jpg');
+                textura.needsUpdate=true;
+                var material=new THREE.MeshPhongMaterial({map:textura});
+                material.overdraw=true;
+                boxMaterial.push(material);
+            }
+            var cubeGeometry = new THREE.CubeGeometry(240,10,4,boxMaterial);
+            var cube = new THREE.Mesh(cubeGeometry, new THREE.MeshPhongMaterial());
+            //cube.position.y=5;
+            ///scene.add(cube);
+
+
+            var materialArray = [];
+            var textura=THREE.ImageUtils.loadTexture( 'imagenes/pared.png' );
+            textura.wrapS = textura.wrapT = THREE.RepeatWrapping; 
+            textura.repeat.set(10,1);
+            materialArray.push(new THREE.MeshBasicMaterial( { map: textura  }));
+            materialArray.push(new THREE.MeshBasicMaterial( { map: textura  }));
+            materialArray.push(new THREE.MeshBasicMaterial( { map: textura  }));
+            materialArray.push(new THREE.MeshBasicMaterial( { map: textura  }));
+            materialArray.push(new THREE.MeshBasicMaterial( { map: textura  }));
+            materialArray.push(new THREE.MeshBasicMaterial( { map: textura  }));
+            
+            var MovingCubeMat = new THREE.MeshFaceMaterial(materialArray);
+            //var MovingCubeMat=new THREE.MeshBasicMaterial( { map: textura  });
+            var MovingCubeGeom = new THREE.CubeGeometry( 10,15, 230 );
+
+            MovingCube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat );
+            MovingCube.position.x=135;
+            MovingCube.position.y=7;
+            //MovingCube.rotation.y=Math.PI/2
+            scene.add( MovingCube );    
+
+
+            var cesped=createWall(floorWidth-50,3,10,'imagenes/cesped.jpg');
+            cesped.rotation.y=-0.5*Math.PI;
+            cesped.position.x=paredFondo.position.x
+            cesped.position.y=hidthParedFondo
+            //paredFondo.material.map.repeat.set(10,10)
+            scene.add(cesped);
+
+
+        }
+
+        function initPortrait(){
+
+            portraitWeight=50
+            portraitHight=40
+            marcoWeight=70
+            marcoHight=50
+
+            var portraitGeometry=new THREE.PlaneGeometry(portraitWeight,portraitHight,1,1);
+            var portraitTexture= THREE.ImageUtils.loadTexture('imagenes/ballNeuman.png');
+            var portraitMaterial = new THREE.MeshPhongMaterial({map:portraitTexture});
+            var portraitMesh= new THREE.Mesh(portraitGeometry,portraitMaterial);
+
+            var marcoGeometry=new THREE.PlaneGeometry(marcoWeight,marcoHight,1,1);
+            var marcoTexture= THREE.ImageUtils.loadTexture('imagenes/marco.png');
+            var marcoMaterial = new THREE.MeshPhongMaterial({map:marcoTexture,transparent:true});
+            var marcoMesh= new THREE.Mesh(marcoGeometry,marcoMaterial);
+
+            portraitMesh.rotation.y=-0.5*Math.PI;
+            marcoMesh.rotation.y=-0.5*Math.PI;
+
+            portraitMesh.position.y=55;
+            marcoMesh.position.y=55;
+
+            portraitMesh.position.x=floorWidth/2 -5;
+            marcoMesh.position.x=floorWidth/2-5;
+
+            portraitMesh.position.z=-floorHeight/2 + 120;
+            marcoMesh.position.z=-floorHeight/2 + 120;
+            
+            scene.add(marcoMesh);
+            scene.add(portraitMesh);
+
+        }
+
+        function initTree(){
+            insertarTree(30, 15, 20, -115, 0, -82);
+            insertarTree(30, 15, 25, -80, 0, -78);
+        }
+
+        function insertarTree(altura, anchoHojas,alturaHojas, x, y, z){
+            var stemGeometry =new THREE.CylinderGeometry(3,3,altura,10);
+            var stemTexture = THREE.ImageUtils.loadTexture('imagenes/arbol.jpg');
+            var stemMaterial = new THREE.MeshPhongMaterial({map:stemTexture});;
+            var stemMesh = new THREE.Mesh(stemGeometry,stemMaterial);
+            stemMesh.castShadow=true;
+
+            var leafGeometry =new THREE.CylinderGeometry(anchoHojas,anchoHojas,alturaHojas,10);
+            var leafTexture = THREE.ImageUtils.loadTexture('imagenes/cesped.jpg');
+            var leafMaterial = new THREE.MeshPhongMaterial({map:leafTexture});
+            leafMaterial.castShadow=true;
+            leafMaterial.bumpMap    = THREE.ImageUtils.loadTexture('imagenes/bumpHojas.jpg')
+            leafMaterial.bumpScale = 0.05;
+
+            var light = new THREE.PointLight( 0xfffbb7,0.5, 100 );
+            light.position.set(x,30,-50);
+
+            var material = new THREE.MeshBasicMaterial({color: 0x0000ff});
+            var radius = 5;
+            var segments = 32;
+
+            var circleGeometry = new THREE.CircleGeometry( radius, segments );              
+            var circle = new THREE.Mesh( circleGeometry, material );
+            circle.position.x=light.position.x;
+            circle.position.y=light.position.y;
+            circle.position.z=light.position.z;
+            //scene.add( circle )
+
+            scene.add( light );
+
+             var leafMesh = new THREE.Mesh(leafGeometry,leafMaterial);
+            leafMesh.receiveShadow=true;
+
+
+            var masetaGeometry =new THREE.CylinderGeometry(10,10,5,20);
+            var masetaTexture=THREE.ImageUtils.loadTexture('imagenes/piso.jpg');
+
+            var masetaMaterial = new THREE.MeshPhongMaterial({map:masetaTexture});
+            var maseta= new THREE.Mesh(masetaGeometry,masetaMaterial);
+
+             stemMesh.position.y=y + altura/2;
+             stemMesh.position.x=x;
+             stemMesh.position.z=z;
+
+            maseta.position.y=3;
+            maseta.position.x=x;
+            maseta.position.z=z;
+
+             leafMesh.position.y= y + altura;
+             leafMesh.position.x=x;
+             leafMesh.position.z=z;
+
+
+             scene.add(stemMesh);
+             scene.add(leafMesh);
+           scene.add(maseta);
+
+        }
+
+
+        function detectColition(object){
+            var flag=false;
+            initwallsColicion();
+            var originPoint = object.position.clone();
+            for (var vertexIndex = 0; vertexIndex < object.geometry.vertices.length; vertexIndex++)
+            {       
+                var localVertex = object.geometry.vertices[vertexIndex].clone();
+                var globalVertex = localVertex.applyMatrix4( object.matrix );
+                var directionVector = globalVertex.sub( object.position );
+                
+                var ray = new THREE.Raycaster( originPoint, directionVector.clone().normalize() );
+                var collisionResults = ray.intersectObjects( wallsColicion );
+                if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) 
+                    flag=true;
+            }  
+            return flag;
+        }
+        //lleno una lista con las paredes que se encuentran en el escenario
+        function initwallsColicion(){
+            wallsColicion=[]
+            wallsColicion.push(paredUno);
+            wallsColicion.push(paredDos);
+            wallsColicion.push(paredTres);
+            wallsColicion.push(paredCuatro);
+            wallsColicion.push(wall);
+            wallsColicion.push(frontalWall);
+            wallsColicion.push(MovingCube);
+
+        }
+
+
+
+
+        function initStats() {
+
+            var stats = new Stats();
+
+            stats.setMode(0); // 0: fps, 1: ms
+
+            // Align top-left
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+
+            $("#Stats-output").append( stats.domElement );
+
+            return stats;
+        }
+    });
+
+</script>
+</body>
+</html>
