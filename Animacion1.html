@@ -435,16 +435,17 @@
                         ballActual.position.z+=7; 
                     }
                     else{
-                     ballActual.position.z-=7; 
+                     ballActual.position.x-=5; 
                     }
                     if(bandAdelante){
                         ballActual.position.x-=5;
                     }
                     else{
-                        ballActual.position.x+=5;
+                        ballActual.position.z+=7;
                     }
                     
                 }
+
             }
 
 
@@ -769,6 +770,7 @@
             wallsColicion.push(paredDos);
             wallsColicion.push(paredTres);
             wallsColicion.push(paredCuatro);
+            wallsColicion.push(ball1);
             wallsColicion.push(ball2);
             wallsColicion.push(ball3);
             wallsColicion.push(wall);
